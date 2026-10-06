@@ -33,7 +33,7 @@ _SAFE_SCHEMA_FIELDS = frozenset({
     "candidate_id", "origin", "title", "problem_statement", "target_users",
     "proposed_outcome", "why_it_matters", "evaluation_method", "domain_tags",
     "required_data", "required_tools", "access_assumptions", "evidence",
-    "source_id", "chunk_id", "stance", "note",
+    "source_id", "chunk_id", "stance", "note", "interests",
 })
 
 
@@ -117,4 +117,13 @@ def safe_validation_hints(error: ValidationError) -> list[str]:
 def safe_validation_summary(error: ValidationError) -> str:
     """Format the safe field-level schema hints for a short user-facing message."""
 
-    return "; ".join(safe_validation_hints(error))
+    hints = safe_validation_hints(error)
+    multiple_interest_areas = any(
+        item.get("type") == "too_long"
+        and item.get("loc", ())
+        and item["loc"][-1] == "interests"
+        for item in error.errors(include_input=False, include_context=False, include_url=False)
+    )
+    if multiple_interest_areas:
+        return "Enter one interest area per run; run each additional area separately."
+    return "; ".join(hints)

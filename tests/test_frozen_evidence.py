@@ -63,7 +63,7 @@ class FrozenEvidenceTests(unittest.IsolatedAsyncioTestCase):
                 self.assertLessEqual(sum(max(1, len(c["text"]) // 4) for c in sent.values()),
                                      result.retrieval_index.max_context_tokens)
                 self.assertTrue(all("evidence_chunks" not in s for s in client.scout_sources))
-                self.assertEqual(len(client.calls), 6)
+                self.assertEqual(len(client.calls), 7)
 
     async def test_metadata_only_does_not_release_passages_and_calls_are_isolated(self):
         adapter = FrozenFixtureAdapter("robotics_agriculture_01")

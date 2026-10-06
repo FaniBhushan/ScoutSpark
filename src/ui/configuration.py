@@ -116,6 +116,9 @@ def submitted_from_controls(
 ) -> SubmittedRunConfiguration:
     """Combine edited controls with confirmed deductions; never apply a draft alone."""
 
+    interest_areas = values.get("request.interests", [])
+    if isinstance(interest_areas, list) and len(interest_areas) > 1:
+        raise ValueError("Enter one interest area per run; run each additional area separately.")
     if prompt.strip() and draft is None:
         raise ValueError("prompt and instructions must be interpreted and reviewed first")
     if draft is not None and prompt.strip() != draft.original_prompt.strip():

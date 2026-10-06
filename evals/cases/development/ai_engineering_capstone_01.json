@@ -8,7 +8,7 @@
     "schema_version": "1.0",
     "domain": "AI engineering",
     "time_limit_days": 30,
-    "interests": ["LLM applications", "retrieval-augmented generation"],
+    "interests": ["LLM applications using retrieval-augmented generation"],
     "skill_level": "intermediate",
     "team_size": 2,
     "available_resources": ["laptop", "Python", "open-source software"],

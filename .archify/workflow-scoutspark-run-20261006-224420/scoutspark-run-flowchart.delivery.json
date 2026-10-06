@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "f95fd807-6b1a-4802-9bac-2d4da5ade1dd",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/candidate.json",
+  "output": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+  "specification": {
+    "sha256": "f50159f63cb1283f8cd43dcf8d664f284cdadeb644a755ccbc4cedde45bee84e",
+    "bytes": 4243
+  },
+  "artifact": {
+    "sha256": "f7cc0fa7f6a9cce41b273c74d6aa8a598ce57e711c6dd60696631605e769dd66",
+    "bytes": 760905
+  }
+}

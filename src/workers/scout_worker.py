@@ -26,6 +26,7 @@ from src.sources.merge import capture_excerpts, is_live_source, merge_source_rec
 from src.workers.query_limits import bound_query_plan
 from src.workers.upload_query import include_upload_query
 from src.workers.source_coverage import recover_source_coverage
+from math import ceil
 
 
 class ScoutQueryPlanner(Protocol):
@@ -79,6 +80,7 @@ class ScoutWorker:
     ) -> ScoutResult:
         if request.domain.casefold() != search.domain.casefold():
             raise ValueError("request and resolved search domains must match")
+        generation_target = ceil(1.5 * request.desired_candidate_count)
 
         queries = include_upload_query(await self.query_planner.plan(request, search), search, ScoutQuery)
         queries, warnings = bound_query_plan(queries, search)
@@ -93,6 +95,7 @@ class ScoutWorker:
         quarantined: set[str] = set()
         type_counts: Counter[str] = Counter()
         search_calls = 0
+        reason_codes = []
         for query in queries:
             remaining = search.max_sources - len(sources)
             if remaining <= 0:
@@ -129,6 +132,8 @@ class ScoutWorker:
                         f"Scout skipped {query.provider_id} search ({type(error).__name__}); "
                         "continuing with other available sources."
                     )
+                    if "provider_unavailable" not in reason_codes:
+                        reason_codes.append("provider_unavailable")
                     if self.tracer:
                         self.tracer.event(
                             "scout", "optional_provider_skipped",
@@ -209,23 +214,56 @@ class ScoutWorker:
             return ScoutResult(
                 sources=sources,
                 warnings=[*warnings, "No usable sources were found for candidate discovery."],
+                generation_target_count=generation_target,
+                reason_codes=[*reason_codes, "source_unavailable"],
             )
 
         trace_span = self.tracer.span("candidate_generation") if self.tracer else nullcontext()
         with trace_span:
-            candidates = await self.candidate_generator.generate(request, available_sources)
+            generation_request = request.model_copy(update={
+                "desired_candidate_count": generation_target,
+            })
+            generate_with_metrics = getattr(self.candidate_generator, "generate_with_metrics", None)
+            if callable(generate_with_metrics):
+                candidates, metrics = await generate_with_metrics(generation_request, available_sources)
+            else:
+                candidates = await self.candidate_generator.generate(generation_request, available_sources)
+                metrics = {}
         # Apply the boundary for injected generators as well as the LLM implementation.
+        generated_count = metrics.get("generated_candidate_count", len(candidates))
         candidates = [item for item in candidates if item.origin != "synthetic"]
+        if metrics.get("invalid_response_batches", 0):
+            reason_codes.append("invalid_output")
+        if metrics.get("duplicate_candidates", 0):
+            reason_codes.append("duplicate_candidates")
+        if metrics.get("unsupported_candidates", 0):
+            reason_codes.append("unsupported_evidence")
+        if len(candidates) < generation_target:
+            reason_codes.append("underproduction")
         if self.tracer:
             self.tracer.budget(
-                "scout", "candidate_count", len(candidates), request.desired_candidate_count
+                "scout", "candidate_count", len(candidates), generation_target
             )
         warnings = list(warnings)
-        if len(candidates) < request.desired_candidate_count:
+        if len(candidates) < generation_target:
             warnings.append(
-                f"Found {len(candidates)} of {request.desired_candidate_count} requested candidates."
+                f"Scout generated {len(candidates)} of {generation_target} internal candidates "
+                f"(target based on {request.desired_candidate_count} user-requested results)."
             )
-        return ScoutResult(candidates=candidates, sources=sources, warnings=warnings)
+        return ScoutResult(
+            candidates=candidates,
+            sources=sources,
+            warnings=warnings,
+            generation_target_count=generation_target,
+            generation_batch_count=metrics.get("batch_count", 0),
+            generated_candidate_count=generated_count,
+            invalid_response_batch_count=metrics.get("invalid_response_batches", 0),
+            duplicate_candidate_count=metrics.get("duplicate_candidates", 0),
+            unsupported_candidate_count=metrics.get("unsupported_candidates", 0),
+            correction_attempt_count=metrics.get("correction_attempts", 0),
+            correction_succeeded=bool(metrics.get("correction_succeeded", 0)),
+            reason_codes=list(dict.fromkeys(reason_codes)),
+        )
 
     def _validate_queries(
         self,

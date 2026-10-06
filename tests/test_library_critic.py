@@ -3,6 +3,7 @@
 import asyncio
 import unittest
 from datetime import datetime, timezone
+from pydantic import ValidationError
 
 from src.evaluation import load_evaluation_configuration
 from src.models import (
@@ -116,6 +117,24 @@ class LibraryCriticTests(unittest.TestCase):
             {key: item.weight for key, item in rubric.criteria.items()},
         )
 
+    def test_critic_returns_each_successful_assessment_when_one_candidate_fails(self):
+        library = asyncio.run(
+            LibraryWorker({"fixture": Adapter()}, Planner()).run(self.request, self.search)
+        )
+        second = self.candidate.model_copy(update={"candidate_id": "candidate-2", "title": "Another idea"})
+
+        class PartlyFailingJudge(Judge):
+            async def assess(inner_self, request, candidate, evidence, rubric):
+                if candidate.candidate_id == "candidate-1":
+                    CandidateAssessment.model_validate({})
+                return await super(PartlyFailingJudge, inner_self).assess(request, candidate, evidence, rubric)
+
+        result = asyncio.run(CriticWorker(
+            InMemoryRetriever(library.chunks), PartlyFailingJudge(),
+        ).run(self.request, [self.candidate, second], library, load_evaluation_configuration()))
+        self.assertEqual([item.candidate_id for item in result.evaluations], ["candidate-2"])
+        self.assertTrue(any("candidate-1 was not scored" in warning for warning in result.warnings))
+
     def test_custom_weights_allow_zero_but_must_total_100(self):
         balanced = load_evaluation_configuration()
         self.assertEqual(balanced.criteria["real_world_pain_point"].weight, 10)
@@ -193,6 +212,19 @@ class LibraryCriticTests(unittest.TestCase):
         self.assertFalse(result.sources)
         self.assertTrue(any("continuing with other available sources" in item
                             for item in result.warnings))
+
+    def test_library_rejects_adapter_over_return_instead_of_truncating(self):
+        class OverReturningAdapter(Adapter):
+            async def search(self, query):
+                record = (await super().search(query))[0]
+                return [record, record, record]
+
+        with self.assertRaisesRegex(ValueError, "exceeded the query result limit"):
+            asyncio.run(
+                LibraryWorker({"fixture": OverReturningAdapter()}, Planner()).run(
+                    self.request, self.search
+                )
+            )
 
     def test_failed_hard_gate_disqualifies_a_high_scoring_candidate(self):
         class FailingJudge(Judge):

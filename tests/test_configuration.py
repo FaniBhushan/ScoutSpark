@@ -1,9 +1,16 @@
 """Resolution of source catalog, presets, routes, and request policy."""
 
 import unittest
+import asyncio
 
 from src.configuration.loader import load_source_configuration, resolve_search_configuration
 from src.models import DomainRoute, InputRequest, SearchLimits
+from src.guardrails import safe_error_message
+from pydantic import ValidationError
+from src.adapters import build_available_adapters
+from src.application.preflight import prepare_run
+from src.application.service import run_prepared_research
+from src.models import SubmittedRunConfiguration
 
 
 class ReadyAdapter:
@@ -136,6 +143,40 @@ class SearchResolutionTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "unavailable source types"):
             resolve_search_configuration(request, self.adapters)
+
+
+class SingleInterestAreaTests(unittest.TestCase):
+    def test_one_interest_area_passes_through_unchanged(self):
+        request = InputRequest(domain="AI engineering", time_limit_days=30,
+                               interests=["robotics for agriculture"])
+        self.assertEqual(request.interests, ["robotics for agriculture"])
+
+    def test_multiple_interest_areas_are_rejected_with_safe_guidance(self):
+        with self.assertRaises(ValidationError) as caught:
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         interests=["robotics", "accessibility"])
+        message = safe_error_message(caught.exception)
+        self.assertIn("one interest area per run", message)
+        self.assertNotIn("robotics", message)
+
+    def test_mutated_prepared_run_is_rejected_before_client_calls(self):
+        class NeverCalledClient:
+            def __init__(self):
+                self.calls = 0
+
+            async def complete(self, prompt, *, max_output_tokens):
+                self.calls += 1
+                raise AssertionError("provider/model call must not start")
+
+        adapters = build_available_adapters(fixture_set="ai_engineering_capstone_01")
+        prepared = prepare_run(SubmittedRunConfiguration(request=InputRequest(
+            domain="AI engineering", time_limit_days=30, interests=["robotics"]
+        )), adapters)
+        prepared.submitted.request.interests.append("accessibility")
+        client = NeverCalledClient()
+        with self.assertRaises(ValidationError):
+            asyncio.run(run_prepared_research(prepared, client, adapters, mode="sequential"))
+        self.assertEqual(client.calls, 0)
 
 
 if __name__ == "__main__":

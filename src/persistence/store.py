@@ -97,12 +97,15 @@ class RunStore:
         self.state["budget"] = values
         self.flush()
 
-    def event(self, stage, event):
+    def event(self, stage, event, *, code=None):
         if self.volatile and stage.startswith("proposal:"):
             stage = "proposal"
-        self.state["events"] = [*self.state["events"][-199:], {"stage": stage, "event": event}]
+        record = {"stage": stage, "event": event}
+        if code is not None:
+            record["code"] = code
+        self.state["events"] = [*self.state["events"][-199:], record]
         if self.tracer:
-            self.tracer.event(stage, event)
+            self.tracer.event(stage, event, code=code)
 
     def read(self, stage, inputs, model):
         key = digest(inputs)
@@ -139,8 +142,13 @@ class RunStore:
         try:
             result = model.model_validate(await operation())
         except BaseException as error:
-            self.event(stage, failure_code(error))
+            code = failure_code(error)
+            self.event(stage, code, code=code)
             self.flush()
+            try:
+                error.stage = stage
+            except (AttributeError, TypeError):
+                pass
             raise
         self.write(stage, inputs, result)
         return result

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9edf091c-2c57-463c-9a0d-2d8cf9cd019e",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-low-level-20261006-224420/candidate.json",
+  "output": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-low-level-20261006-224420/scoutspark-low-level.html",
+  "specification": {
+    "sha256": "e5032033edef02d1c3e40112f747d386e1039f8bd6fcb8684e48ca4ceb9e4ae6",
+    "bytes": 4836
+  },
+  "artifact": {
+    "sha256": "9848185566718a0de5ac2bd19d9566bd94d2f44e93f9e0ce123109c295ab6150",
+    "bytes": 770036
+  }
+}

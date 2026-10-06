@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "ScoutSpark | Research run flowchart",
+    "locale": "en",
+    "output": ".archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "git@github.com:FaniBhushan/SparkScout.git",
+      "revision": "3b7f558fe0a680dbf56a25323bfa9a10cc19c7b1",
+      "link_mode": "local-only"
+    }
+  },
+  "lanes": [
+    {"id":"intake","label":"Request and review"},
+    {"id":"scout_lane","label":"Scout research"},
+    {"id":"library_lane","label":"Library research"},
+    {"id":"decision","label":"Join and evaluation"},
+    {"id":"delivery","label":"Proposal and results"}
+  ],
+  "mainPath": ["configure","preview","start","scout","join","critic","finalize","result"],
+  "nodes": [
+    {"id":"configure","lane":"intake","col":0,"type":"frontend","label":"Configure request","sublabel":"domain, sources, rubric","width":145,"sources":[{"path":"src/ui/app.py","line":171,"end_line":180}]},
+    {"id":"preview","lane":"intake","col":1,"type":"security","label":"Review preview","sublabel":"resolved plan + limits","width":145,"sources":[{"path":"src/ui/app.py","line":226,"end_line":249}]},
+    {"id":"start","lane":"intake","col":2,"type":"frontend","label":"Start research","sublabel":"reviewed configuration","width":145,"sources":[{"path":"src/ui/app.py","line":286,"end_line":303}]},
+    {"id":"scout","lane":"scout_lane","col":2,"type":"backend","label":"Scout","sublabel":"propose candidates","width":145,"sources":[{"path":"src/orchestration/coordinator.py","line":267,"end_line":297},{"path":"src/workers/scout_worker.py","line":83,"end_line":85}]},
+    {"id":"library","lane":"library_lane","col":3,"type":"backend","label":"Library","sublabel":"independent evidence","width":145,"sources":[{"path":"src/orchestration/coordinator.py","line":267,"end_line":297},{"path":"src/workers/library_worker.py","line":50,"end_line":58}]},
+    {"id":"join","lane":"decision","col":3,"type":"security","label":"Validate join","sublabel":"source and candidate IDs","width":145,"sources":[{"path":"src/orchestration/coordinator.py","line":84,"end_line":109},{"path":"src/orchestration/coordinator.py","line":130,"end_line":146}]},
+    {"id":"critic","lane":"decision","col":4,"type":"backend","label":"Critic and rank","sublabel":"retrieve, score, gate","width":145,"sources":[{"path":"src/orchestration/coordinator.py","line":159,"end_line":235}]},
+    {"id":"finalize","lane":"delivery","col":4,"type":"backend","label":"Draft and verify","sublabel":"eligible ideas in rank order","width":155,"sources":[{"path":"src/application/finalization.py","line":72,"end_line":81},{"path":"src/application/finalization.py","line":145,"end_line":170}]},
+    {"id":"result","lane":"delivery","col":5,"type":"frontend","label":"Show result","sublabel":"proposals or caveats","width":145,"sources":[{"path":"src/application/finalization.py","line":204,"end_line":215},{"path":"src/ui/app.py","line":326,"end_line":338}]}
+  ],
+  "edges": [
+    {"from":"configure","to":"preview","label":"resolve"},
+    {"from":"preview","to":"start","label":"approved plan"},
+    {"from":"start","to":"scout","label":"required","role":"branch"},
+    {"from":"start","to":"library","label":"required","role":"branch","fromSide":"bottom","toSide":"top"},
+    {"from":"scout","to":"join","label":"candidates"},
+    {"from":"library","to":"join","label":"chunks"},
+    {"from":"join","to":"critic","label":"coverage met"},
+    {"from":"critic","to":"finalize","label":"gate-passing ideas"},
+    {"from":"finalize","to":"result","label":"verified output"},
+    {"from":"join","to":"result","label":"coverage below minimum","role":"error"}
+  ],
+  "cards": [
+    {"dot":"cyan","title":"Required branches","items":["Scout and Library are both required; they can run sequentially or in parallel.","The join validates IDs and quarantines conflicting live source receipts."]},
+    {"dot":"amber","title":"When proposals fail","items":["Finalization tries the next gate-passing candidate.","If none survives, a single bounded recovery round may search and reassess.","Insufficient coverage still returns scorecards and warnings."]}
+  ]
+}

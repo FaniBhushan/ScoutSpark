@@ -33,10 +33,12 @@ SECRET = "sk-proj-" + "x" * 40
 class InputGuardrailTests(unittest.TestCase):
     def test_structured_fields_and_list_boundaries(self):
         request = InputRequest(domain="AI engineering", time_limit_days=30,
-                               interests=["x" * 200] * 20)
-        self.assertEqual(len(request.interests), 20)
+                               interests=["x" * 200], available_resources=["resource"] * 20)
+        self.assertEqual(len(request.interests), 1)
+        self.assertEqual(len(request.available_resources), 20)
         for field, value in (
-            ("interests", ["x" * 201]), ("interests", ["AI"] * 21),
+            ("interests", ["x" * 201]), ("interests", ["AI", "robotics"]),
+            ("available_resources", ["resource"] * 21),
             ("available_resources", ["x" * 1001]),
             ("excluded_topics", ["topic"] * 21),
             ("data_constraints", ["x" * 1001]),
@@ -80,7 +82,8 @@ class InputGuardrailTests(unittest.TestCase):
             InputRequest(domain="AI engineering", time_limit_days=30, interests=[private])
         except ValidationError as error:
             message = safe_error_message(error)
-        self.assertIn("200", message)
+        self.assertIn("string_too_long", message)
+        self.assertNotIn("200", message)
         self.assertNotIn(private, message)
         self.assertNotIn(SECRET, safe_error_message(ValueError(SECRET)))
 

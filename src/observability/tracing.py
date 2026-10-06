@@ -15,6 +15,7 @@ from typing import Callable, Iterator
 from uuid import uuid4
 
 from src.models.usage_record import UsageRecord
+from src.runtime.failures import failure_code
 
 
 class _ConsoleFormatter(logging.Formatter):
@@ -104,6 +105,7 @@ class RunTracer:
         query_id: str | None = None,
         count: int | None = None,
         failure_type: str | None = None,
+        code: str | None = None,
         schema_issues: list[str] | None = None,
     ) -> None:
         """Record an event using bounded metadata only."""
@@ -116,6 +118,7 @@ class RunTracer:
             query_id=query_id,
             count=count,
             failure_type=failure_type,
+            code=code,
             schema_issues=schema_issues[:5] if schema_issues else None,
             span_id=self._active_span.get(),
         )
@@ -202,6 +205,7 @@ class RunTracer:
                 parent_span_id=parent_span_id,
                 duration_ms=round((perf_counter() - started) * 1000, 2),
                 error_type=type(error).__name__,
+                failure_code=failure_code(error),
             )
             raise
         else:

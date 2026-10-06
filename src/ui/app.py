@@ -20,11 +20,12 @@ from src.llm.client import ModelPricing, OpenAITextClient
 from src.llm.request_interpreter import LLMRequestInterpreter
 from src.models import PreparedRun
 from src.observability import RunTracer
+from src.runtime.failures import failure_details
 from src.application.preflight import prepare_run
 from .configuration import interface_catalog, submitted_from_controls
 from .controls import _advanced_controls, _prompt_text, _simple_controls
 from .state import _accepted_paths, _acknowledged_issues, _fingerprint, _initialize, _reset_search
-from .views import _result_view, _show_draft
+from .views import _result_view, _show_draft, show_failure
 from .run_history import has_saved_run, list_saved_runs, load_run_result, save_run_result
 
 
@@ -56,7 +57,26 @@ def main() -> None:
         if new_col.button("Start new search", type="primary"):
             _reset_search()
             st.rerun()
-        _result_view(st.session_state.result)
+        result = st.session_state.result
+        model_id = st.session_state.get("model_id", "offline-demo")
+        action_pricing = None
+        if result.prepared_run and result.prepared_run.budgets.max_estimated_cost_usd is not None:
+            input_rate = st.session_state.get("saved_pricing_input", 0.0)
+            output_rate = st.session_state.get("saved_pricing_output", 0.0)
+            if input_rate > 0 and output_rate > 0:
+                action_pricing = ModelPricing(input_rate, output_rate)
+
+        def action_client_factory():
+            if st.session_state.get("data_mode", "Offline demo") == "Offline demo":
+                return OfflineDemoClient()
+            if not os.getenv("OPENAI_API_KEY"):
+                raise ValueError("OPENAI_API_KEY is required for this additional model work")
+            if (result.prepared_run and result.prepared_run.budgets.max_estimated_cost_usd is not None
+                    and action_pricing is None):
+                raise ValueError("saved model price rates are required to honor this run's cost cap")
+            return OpenAITextClient(model_id, pricing=action_pricing)
+
+        _result_view(result, action_client_factory=action_client_factory)
         return
 
     title_col, history_col = st.columns([5, 1])
@@ -214,8 +234,10 @@ def main() -> None:
                     "The model reply did not match the request fields. No search has started. "
                     "Try drafting again, or fill the fields directly."
                 )
+                details = failure_details(error, stage_hint="interpretation")
+                st.caption(f"Stage: {details['stage']} · Code: {details['code']}")
             else:
-                st.error(safe_error_message(error))
+                show_failure(error, stage_hint="interpretation")
     draft = st.session_state.draft
     if draft is not None and st.session_state.get("draft_providers") != tuple(catalog.providers):
         st.warning("Available sources changed. Draft the prompt again before previewing.")
@@ -249,7 +271,7 @@ def main() -> None:
             st.session_state.preview = (fingerprint, prepared)
         except (ValueError, ValidationError) as error:
             st.session_state.preview = None
-            st.error(safe_error_message(error))
+            show_failure(error, stage_hint="preflight")
 
     preview = st.session_state.preview
     ready = preview is not None and preview[0] == fingerprint
@@ -348,7 +370,7 @@ def main() -> None:
                 status.update(label="Run complete", state="complete")
             except Exception as error:
                 status.update(label="Run failed", state="error")
-                st.error(safe_error_message(error))
+                show_failure(error)
             finally:
                 tracer.close()
     if st.session_state.ui_page == "results":
@@ -376,7 +398,7 @@ def _show_saved_run_history() -> None:
             try:
                 st.session_state.result = load_run_result(selected_id)
             except (OSError, ValueError) as error:
-                st.error(safe_error_message(error))
+                show_failure(error, stage_hint="checkpoint")
                 return
             st.session_state.ui_page = "results"
             st.rerun()

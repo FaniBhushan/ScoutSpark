@@ -8,7 +8,7 @@
     "schema_version": "1.0",
     "domain": "medicine",
     "time_limit_days": 60,
-    "interests": ["healthcare", "data science"],
+    "interests": ["healthcare data science"],
     "skill_level": "advanced",
     "team_size": 3,
     "available_resources": [],

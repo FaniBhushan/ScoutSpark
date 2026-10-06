@@ -11,19 +11,24 @@ def render_scorecards(result) -> None:
     candidates = {item.candidate_id: item for attempt in result.recovery_history
                   for item in attempt.previous_candidates}
     candidates.update({item.candidate_id: item for item in result.scout.candidates})
-    evaluations = {item.candidate_id: item for attempt in result.recovery_history
-                   for item in attempt.previous_evaluations}
-    evaluations.update({item.candidate_id: item for item in result.critic.evaluations})
+    evaluations = {item.candidate_id: item for item in result.score_evaluations}
     proposals = {item.candidate_id: item for item in result.final_proposals}
+    proposals.update({item.proposal.candidate_id: item.proposal for item in result.additional_proposals})
     ordered = result.score_ranking
+    candidate_target = (result.prepared_run.request.desired_candidate_count if result.prepared_run
+                        else len(result.scout.candidates))
+    visible = ordered[:candidate_target]
     target = (result.prepared_run.request.finalist_count if result.prepared_run
               else result.requested_finalist_count)
+    st.subheader(f"Scored ideas: {len(visible)} of {candidate_target} requested")
     st.subheader(f"Top {target} finalists by weighted score")
     st.caption("Scores reflect your criterion weights. Review gate warnings and evidence before choosing an idea.")
+    if len(visible) < candidate_target:
+        st.warning(f"Only {len(visible)} of {candidate_target} requested candidate scorecards are available.")
     if len(selected) < target:
         st.warning(f"Only {len(selected)} candidates were scored; {target} finalists were requested.")
     for finalist in (True, False):
-        rows = [row for row in ordered if (row.candidate_id in selected) == finalist]
+        rows = [row for row in visible if (row.candidate_id in selected) == finalist]
         if not finalist and rows:
             st.subheader("Other candidate ideas")
         for row in rows:

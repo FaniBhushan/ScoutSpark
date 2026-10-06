@@ -4,7 +4,7 @@
     "schema_version": "1.0",
     "domain": "ai_engineering",
     "time_limit_days": 30,
-    "interests": ["RAG evaluation", "reliable AI applications"],
+  "interests": ["reliable retrieval-augmented generation evaluation"],
     "skill_level": "intermediate",
     "team_size": 2,
     "available_resources": ["laptop", "Python", "open-source software"],

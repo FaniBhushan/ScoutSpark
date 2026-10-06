@@ -1,0 +1,394 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "workflow",
+  "quality": "showcase",
+  "startedAt": "2026-10-06T20:46:14.255Z",
+  "specification": {
+    "path": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/candidate.json",
+    "sha256": "f50159f63cb1283f8cd43dcf8d664f284cdadeb644a755ccbc4cedde45bee84e",
+    "bytes": 4243
+  },
+  "artifact": {
+    "path": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+    "sha256": "f7cc0fa7f6a9cce41b273c74d6aa8a598ce57e711c6dd60696631605e769dd66",
+    "bytes": 760905
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "deliver",
+        "workflow",
+        "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/candidate.json",
+        "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/Users/fanibhushan/ScoutSpark",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "f50159f63cb1283f8cd43dcf8d664f284cdadeb644a755ccbc4cedde45bee84e",
+          "bytes": 4243
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 454,
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "deliver",
+        "workflow",
+        "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/candidate.json",
+        "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/Users/fanibhushan/ScoutSpark",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "f95fd807-6b1a-4802-9bac-2d4da5ade1dd",
+        "ok": true,
+        "command": "deliver",
+        "type": "workflow",
+        "input": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/candidate.json",
+        "output": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+        "specification": {
+          "sha256": "f50159f63cb1283f8cd43dcf8d664f284cdadeb644a755ccbc4cedde45bee84e",
+          "bytes": 4243
+        },
+        "artifact": {
+          "sha256": "f7cc0fa7f6a9cce41b273c74d6aa8a598ce57e711c6dd60696631605e769dd66",
+          "bytes": 760905
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:FaniBhushan/SparkScout",
+          "revision": "3b7f558fe0a680dbf56a25323bfa9a10cc19c7b1",
+          "references": 14,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 148,
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "check",
+        "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+        "artifact": {
+          "sha256": "f7cc0fa7f6a9cce41b273c74d6aa8a598ce57e711c6dd60696631605e769dd66",
+          "bytes": 760905
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 27,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.038961038961039,
+            "maxBends": 4,
+            "routesOverSuggestedBends": 2,
+            "maxStretch": 4.583,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 16,
+            "minInteriorSegmentPx": 76.5,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "from": "start",
+                  "to": "library",
+                  "label": "required",
+                  "collectionIndex": 8,
+                  "artifactIndex": 9
+                },
+                "bends": 4,
+                "stretch": 4.583
+              },
+              {
+                "relationship": {
+                  "from": "start",
+                  "to": "scout",
+                  "label": "required",
+                  "collectionIndex": 9,
+                  "artifactIndex": 10
+                },
+                "bends": 3,
+                "stretch": 1.202
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": false,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": null,
+            "requestedTargetMet": null,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "node",
+              "id": "configure"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 6.038961038961039,
+            "semanticTextCount": 28
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "f95fd807-6b1a-4802-9bac-2d4da5ade1dd"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 21,
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "browser-check",
+        "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "f95fd807-6b1a-4802-9bac-2d4da5ade1dd",
+        "artifact": {
+          "path": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html",
+          "sha256": "f7cc0fa7f6a9cce41b273c74d6aa8a598ce57e711c6dd60696631605e769dd66",
+          "bytes": 760905
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/browser-check-runtime",
+            "severity": "error",
+            "message": "browser-check could not complete its Chrome inspection.",
+            "subject": {
+              "artifact": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html"
+            },
+            "evidence": {
+              "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome transport: Node v18.20.8, libuv 1.44.2, darwin; pid=57883, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+            },
+            "supportedFixes": [
+              "resolve the reported Chrome inspection error, then rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "scoutspark-run-flowchart.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome transport: Node v18.20.8, libuv 1.44.2, darwin; pid=57883, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome transport: Node v18.20.8, libuv 1.44.2, darwin; pid=57883, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.finalize.json",
+    "summaryReceipt": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.finalize-summary.json",
+    "browserCheckReceipt": "/Users/fanibhushan/ScoutSpark/.archify/workflow-scoutspark-run-20261006-224420/scoutspark-run-flowchart.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-06T20:46:15.047Z",
+  "durationMs": 791,
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "cache-unavailable"
+  }
+}

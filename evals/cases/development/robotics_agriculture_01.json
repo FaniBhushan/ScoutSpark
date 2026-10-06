@@ -8,7 +8,7 @@
     "schema_version": "1.0",
     "domain": "robotics",
     "time_limit_days": 30,
-    "interests": ["agriculture", "computer vision"],
+    "interests": ["computer vision for agriculture"],
     "skill_level": "intermediate",
     "team_size": 2,
     "available_resources": ["laptop", "webcam", "open-source software"],

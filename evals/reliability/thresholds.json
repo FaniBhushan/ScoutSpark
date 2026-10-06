@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "minimum_repeats": 10,
+  "metrics": {
+    "valid_result_completion_rate": {"minimum": 0.9},
+    "candidate_count_target_rate": {"minimum": 0.9},
+    "finalist_count_target_rate": {"minimum": 0.8},
+    "citation_integrity_rate": {"minimum": 0.99},
+    "evidence_support_rate": {"minimum": 0.99},
+    "score_consistency_rate": {"minimum": 0.99},
+    "ranking_consistency_rate": {"minimum": 0.99},
+    "shortfall_reporting_accuracy": {"minimum": 1.0},
+    "top_k_overlap_mean": {"minimum": 0.8},
+    "rank_spearman_mean": {"minimum": 0.8},
+    "score_mae_mean": {"maximum": 0.5}
+  }
+}

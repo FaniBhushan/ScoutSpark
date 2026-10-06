@@ -92,7 +92,7 @@ The primary user is a student or small student team choosing a capstone topic un
 ```json
 {
   "domain": "Robotics",
-  "interests": ["agriculture", "computer vision"],
+  "interests": ["computer vision for agriculture"],
   "skill_level": "intermediate",
   "team_size": 2,
   "time_limit_days": 30,

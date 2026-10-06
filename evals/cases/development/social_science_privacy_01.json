@@ -8,7 +8,7 @@
     "schema_version": "1.0",
     "domain": "social science",
     "time_limit_days": 45,
-    "interests": ["public transport", "user experience"],
+    "interests": ["public transport user experience"],
     "skill_level": "intermediate",
     "team_size": 2,
     "available_resources": [],

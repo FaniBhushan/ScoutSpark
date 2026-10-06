@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-06T20:45:16.937Z",
+  "specification": {
+    "path": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/candidate.json",
+    "sha256": "238980212c7f1d0e77a1c22bd987a75bc22874320bee7ccc735dbf125f939984",
+    "bytes": 3393
+  },
+  "artifact": {
+    "path": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+    "sha256": "4a90bdae00645084233aaaae6b8fc5753ff97d2892624f089903baa78b998716",
+    "bytes": 758598
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/candidate.json",
+        "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/Users/fanibhushan/ScoutSpark",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "238980212c7f1d0e77a1c22bd987a75bc22874320bee7ccc735dbf125f939984",
+          "bytes": 3393
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 348,
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/candidate.json",
+        "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/Users/fanibhushan/ScoutSpark",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "619131cf-4442-4efa-8251-8ef5d3d936d3",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/candidate.json",
+        "output": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+        "specification": {
+          "sha256": "238980212c7f1d0e77a1c22bd987a75bc22874320bee7ccc735dbf125f939984",
+          "bytes": 3393
+        },
+        "artifact": {
+          "sha256": "4a90bdae00645084233aaaae6b8fc5753ff97d2892624f089903baa78b998716",
+          "bytes": 758598
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "git@github.com:FaniBhushan/SparkScout",
+          "revision": "3b7f558fe0a680dbf56a25323bfa9a10cc19c7b1",
+          "references": 15,
+          "linkMode": "local-only"
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 138,
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "check",
+        "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+        "artifact": {
+          "sha256": "4a90bdae00645084233aaaae6b8fc5753ff97d2892624f089903baa78b998716",
+          "bytes": 758598
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 65.1,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 6.7723270440251575,
+            "maxBends": 0,
+            "routesOverSuggestedBends": 0,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 95,
+            "minInteriorSegmentPx": null,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": []
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 60,
+            "emptyTopRatio": 0.098,
+            "occupiedTop": 60,
+            "viewBoxTop": 0,
+            "canvasHeight": 611,
+            "typicalNodeHeight": 68,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "recognized-declared-wide",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 1346,
+            "actualBudgetPx": 1346,
+            "actualReaderWidth": 1376,
+            "desiredReaderWidth": 1520.625,
+            "viewportCap": 1376,
+            "limit": "viewport-cap",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": null,
+              "from": "student",
+              "to": "interface"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 6.7723270440251575,
+            "semanticTextCount": 23
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "619131cf-4442-4efa-8251-8ef5d3d936d3"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 5543,
+      "command": [
+        "/Users/fanibhushan/.nvm/versions/node/v18.20.8/bin/node",
+        "/private/var/folders/fz/xkt6_kj51z3_7rdj7qsm8nz00000gn/T/skills-use-F72XCS/archify/bin/archify.mjs",
+        "browser-check",
+        "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "619131cf-4442-4efa-8251-8ef5d3d936d3",
+        "artifact": {
+          "path": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+          "sha256": "4a90bdae00645084233aaaae6b8fc5753ff97d2892624f089903baa78b998716",
+          "bytes": 758598
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/browser-check-runtime",
+            "severity": "error",
+            "message": "browser-check could not complete its Chrome inspection.",
+            "subject": {
+              "artifact": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html"
+            },
+            "evidence": {
+              "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome transport: Node v18.20.8, libuv 1.44.2, darwin; pid=57258, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+            },
+            "supportedFixes": [
+              "resolve the reported Chrome inspection error, then rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "scoutspark-high-level.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome transport: Node v18.20.8, libuv 1.44.2, darwin; pid=57258, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+      }
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools read pipe failed: stream ended\nChrome process: still running.\nChrome transport: Node v18.20.8, libuv 1.44.2, darwin; pid=57258, exitCode=null, signalCode=null.\nChrome read pipe: readable=false, ended=true, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=true, ended=false, destroyed=false, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.finalize.json",
+    "summaryReceipt": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.finalize-summary.json",
+    "browserCheckReceipt": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-06T20:45:23.333Z",
+  "durationMs": 6395,
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "cache-unavailable"
+  }
+}

@@ -8,7 +8,7 @@
     "schema_version": "1.0",
     "domain": "mathematics",
     "time_limit_days": 40,
-    "interests": ["optimization", "mathematical computing"],
+    "interests": ["optimization in mathematical computing"],
     "skill_level": "advanced",
     "team_size": 2,
     "available_resources": ["laptop", "Python"],

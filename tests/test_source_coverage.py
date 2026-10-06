@@ -27,10 +27,12 @@ class CoverageTests(unittest.IsolatedAsyncioTestCase):
     async def test_actual_receipts_not_planned_types_trigger_recovery(self):
         initial = await self.initial_sources()
         self.assertEqual(len(initial), 2)
+        metrics = {}
         sources, warnings = await recover_source_coverage(self.request, self.search, initial,
-            {"frozen_fixture": self.adapter}, planned_queries=3, stage="library")
+            {"frozen_fixture": self.adapter}, planned_queries=3, stage="library", metrics=metrics)
         self.assertGreaterEqual(len(sources), 3)
         self.assertEqual(len(warnings), 1)
+        self.assertEqual(metrics["recovery_queries"], 1)
         self.assertEqual(len({source.source_id for source in sources}), len(sources))
 
     async def test_exhausted_query_allowance_never_calls_adapter(self):
@@ -38,10 +40,12 @@ class CoverageTests(unittest.IsolatedAsyncioTestCase):
             async def search(self, query):
                 raise AssertionError("budget exceeded")
         initial = await self.initial_sources()
+        metrics = {}
         sources, warnings = await recover_source_coverage(self.request, self.search, initial,
-            {"frozen_fixture": ForbiddenAdapter()}, planned_queries=4, stage="library")
+            {"frozen_fixture": ForbiddenAdapter()}, planned_queries=4, stage="library", metrics=metrics)
         self.assertEqual(sources, initial)
         self.assertFalse(warnings)
+        self.assertEqual(metrics["recovery_queries"], 0)
 
     async def test_rate_limited_optional_source_does_not_discard_existing_sources(self):
         class LimitedAdapter:

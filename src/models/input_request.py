@@ -16,6 +16,7 @@ InterestText = Annotated[str, Field(min_length=1, max_length=200)]
 DomainText = Annotated[str, Field(min_length=1, max_length=200)]
 RequestDetail = Annotated[str, Field(min_length=1, max_length=1000)]
 InterestList = Annotated[list[InterestText], Field(max_length=20)]
+InterestAreaList = Annotated[list[InterestText], Field(max_length=1)]
 DetailList = Annotated[list[RequestDetail], Field(max_length=20)]
 
 
@@ -29,7 +30,7 @@ class InputRequest(ContractModel):
     schema_version: Literal["1.0"] = "1.0"
     domain: DomainText
     time_limit_days: PositiveInt
-    interests: InterestList = Field(default_factory=list)
+    interests: InterestAreaList = Field(default_factory=list)
     skill_level: SkillLevel = SkillLevel.INTERMEDIATE
     team_size: PositiveInt = 1
     available_resources: DetailList = Field(default_factory=list)

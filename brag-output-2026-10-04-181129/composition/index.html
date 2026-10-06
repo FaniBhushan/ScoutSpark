@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <title>ScoutSpark — Capstone ideas, carefully reviewed</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+      body { background: #f7f8fa; color: #262730; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      .clip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .scene { width: 100%; height: 100%; padding: 70px 130px; background-color: #f7f8fa; }
+      .scene-mark { position: absolute; top: 46px; left: 74px; display: flex; align-items: center; gap: 14px; font-size: 23px; font-weight: 750; letter-spacing: -0.7px; }
+      .spark { width: 32px; height: 32px; border-radius: 10px; background: #ff4b4b; display: grid; place-items: center; color: white; font-size: 19px; box-shadow: 0 8px 22px rgba(255,75,75,.22); }
+      .quiet { position: absolute; right: 78px; top: 52px; color: #667085; font-size: 17px; letter-spacing: .02em; }
+      .hero-layout { width: 100%; height: 100%; display: grid; grid-template-columns: 0.9fr 1.1fr; align-items: center; gap: 80px; }
+      .hero-kicker { color: #ca4242; font-size: 18px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; margin-bottom: 24px; }
+      h1 { font-size: 80px; line-height: 1.03; letter-spacing: -4.5px; max-width: 750px; font-weight: 760; margin: 0; }
+      .hero-sub { color: #667085; font-size: 25px; line-height: 1.5; margin-top: 28px; max-width: 640px; }
+      .hero-rule { display: flex; align-items: center; gap: 13px; margin-top: 36px; color: #555e6d; font-size: 17px; }
+      .dot { width: 9px; height: 9px; border-radius: 50%; background: #ff4b4b; }
+      .window { background: #fff; border: 1px solid #e7e9ee; border-radius: 17px; overflow: hidden; box-shadow: 0 32px 80px rgba(23,32,56,.12); }
+      .window-bar { height: 54px; background: #fbfbfc; border-bottom: 1px solid #eaecf0; display: flex; align-items: center; padding: 0 20px; gap: 9px; color: #687182; font-size: 14px; }
+      .traffic { width: 10px; height: 10px; border-radius: 50%; background: #dadde3; }
+      .window-label { margin-left: 9px; }
+      .hero-window { width: 760px; transform: rotate(-1.7deg); }
+      .hero-window-body { padding: 34px 40px 40px; }
+      .app-title { font-size: 30px; font-weight: 750; margin-bottom: 5px; }
+      .app-caption { font-size: 14px; color: #667085; margin-bottom: 25px; }
+      .field-label { color: #4b5565; font-size: 14px; font-weight: 650; margin: 18px 0 8px; }
+      .field { background: white; border: 1px solid #d9dde5; height: 45px; border-radius: 7px; display: flex; align-items: center; padding: 0 13px; font-size: 15px; color: #333b49; }
+      .fake-radio { display: inline-flex; gap: 8px; align-items: center; margin-right: 25px; font-size: 15px; }
+      .radio { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #aeb5c1; }
+      .radio.on { border: 5px solid #ff4b4b; }
+      .notice { background: #fff7ed; border: 1px solid #fed7aa; color: #8a4617; border-radius: 8px; padding: 12px 14px; font-size: 13px; line-height: 1.4; margin-top: 20px; }
+      .preview-scene { flex-direction: column; align-items: stretch; padding: 116px 150px 74px; }
+      .preview-heading { font-size: 43px; letter-spacing: -1.8px; font-weight: 740; margin: 5px 0 9px; }
+      .preview-caption { font-size: 18px; color: #697280; margin-bottom: 28px; }
+      .preview-window { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+      .preview-left { padding: 35px 42px; border-right: 1px solid #eceef2; }
+      .preview-right { padding: 35px 42px; background: #fbfcfd; }
+      .preview-btn { display: inline-flex; align-items: center; background: #ff4b4b; color: #272727; border-radius: 8px; padding: 17px 22px; font-size: 17px; font-weight: 680; box-shadow: 0 7px 14px rgba(255,75,75,.18); }
+      .preview-helper { color: #697383; font-size: 15px; line-height: 1.45; margin: 16px 0 22px; max-width: 610px; }
+      .tag { color: #686f7d; font-size: 13px; font-weight: 680; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 14px; }
+      .resolved { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+      .resolved-card { border: 1px solid #e7e9ee; border-radius: 10px; padding: 18px; background: #fff; }
+      .resolved-label { color: #707785; font-size: 13px; margin-bottom: 7px; }
+      .resolved-value { font-size: 19px; font-weight: 660; }
+      .checkmark { width: 30px; height: 30px; color: #14804a; border-radius: 50%; background: #eaf7ef; display: grid; place-items: center; font-size: 17px; margin-bottom: 14px; }
+      .results-scene { flex-direction: column; align-items: stretch; padding: 115px 150px 72px; }
+      .results-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 23px; }
+      .results-heading { font-size: 40px; letter-spacing: -1.5px; font-weight: 740; }
+      .synthetic-chip { border-radius: 99px; border: 1px solid #e9c889; background: #fff8e7; color: #79531a; padding: 10px 15px; font-size: 14px; font-weight: 650; }
+      .results-window { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+      .result-card { border: 1px solid #e4e7ed; border-radius: 13px; background: #fff; padding: 22px 25px; box-shadow: 0 10px 24px rgba(31,41,55,.045); }
+      .result-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 11px; }
+      .rank { color: #707784; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+      .score { color: #293344; font-size: 24px; font-weight: 730; }
+      .result-title { font-size: 23px; font-weight: 720; margin-bottom: 8px; }
+      .result-desc { color: #677181; font-size: 15px; line-height: 1.42; min-height: 42px; }
+      .scoreline { margin-top: 17px; border-top: 1px solid #eef0f3; padding-top: 13px; display: flex; justify-content: space-between; color: #697382; font-size: 13px; }
+      .scoreline strong { color: #354052; font-weight: 650; }
+      .caveat { margin-top: 18px; border-radius: 9px; border: 1px solid #f4d0cb; background: #fff7f6; padding: 14px 18px; color: #7c3530; font-size: 15px; display: flex; align-items: center; gap: 11px; }
+      .caveat-icon { width: 22px; height: 22px; flex: 0 0 auto; border-radius: 50%; background: #ffe4e1; display: grid; place-items: center; font-size: 14px; font-weight: 750; }
+      .evidence-row { display: flex; align-items: center; gap: 8px; margin-top: 13px; font-size: 13px; color: #697382; }
+      .evidence-dot { width: 7px; height: 7px; border-radius: 50%; background: #679a78; }
+      .close-layout { width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      .close-spark { width: 72px; height: 72px; border-radius: 23px; background: #ff4b4b; color: white; display: grid; place-items: center; font-size: 40px; margin-bottom: 26px; box-shadow: 0 14px 34px rgba(255,75,75,.22); }
+      .close-title { font-size: 68px; letter-spacing: -3.2px; font-weight: 760; }
+      .close-copy { font-size: 23px; color: #677181; margin-top: 21px; }
+      .close-line { width: 150px; height: 3px; background: #ff4b4b; border-radius: 4px; margin-top: 34px; }
+      .audio { display: none; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-x42y" id="root" data-composition-id="main" data-width="1920" data-height="1080" data-duration="20">
+      <section data-hf-id="hf-n7df" id="s1" class="clip scene" data-start="0" data-duration="2.5">
+        <div data-hf-id="hf-m0w6" class="scene-mark"><span data-hf-id="hf-b21h" class="spark">✳</span><span data-hf-id="hf-ztpa">ScoutSpark</span></div>
+        <div data-hf-id="hf-3khb" class="hero-layout">
+          <div data-hf-id="hf-jloi" class="hero-copy">
+            <div data-hf-id="hf-v6c7" class="hero-kicker">CAPSTONE IDEAS, CAREFULLY REVIEWED</div>
+            <h1 data-hf-id="hf-q1lw" class="hero-title">One project idea.<br data-hf-id="hf-x5px">Several checks.</h1>
+            <p data-hf-id="hf-31g3" class="hero-sub">A research plan that leads to ideas you can inspect.</p>
+            <div data-hf-id="hf-icqb" class="hero-rule"><span data-hf-id="hf-9gry" class="dot"></span><span data-hf-id="hf-w2j2">Discovery · evidence · evaluation</span></div>
+          </div>
+          <div data-hf-id="hf-fqxd" class="window hero-window">
+            <div data-hf-id="hf-85t8" class="window-bar"><span data-hf-id="hf-lp3g" class="traffic"></span><span data-hf-id="hf-bxpg" class="traffic"></span><span data-hf-id="hf-aqsd" class="traffic"></span><span data-hf-id="hf-l58u" class="window-label">ScoutSpark / configure</span></div>
+            <div data-hf-id="hf-b4xa" class="hero-window-body">
+              <div data-hf-id="hf-s7mj" class="app-title">ScoutSpark</div>
+              <div data-hf-id="hf-xmbi" class="app-caption">Review the source plan and scoring weights before starting research.</div>
+              <div data-hf-id="hf-kbx1" class="field-label">Domain</div><div data-hf-id="hf-jb8v" class="field">Computer science&#160; ▾</div>
+              <div data-hf-id="hf-4wb8" class="field-label">Data mode</div><div data-hf-id="hf-yeow"><span data-hf-id="hf-z04u" class="fake-radio"><i data-hf-id="hf-gloo" class="radio on"></i> Offline demo</span><span data-hf-id="hf-wkpc" class="fake-radio"><i data-hf-id="hf-smml" class="radio"></i> Live sources</span></div>
+              <div data-hf-id="hf-of40" class="notice">Fully offline demo: frozen synthetic sources and deterministic model responses. Not real-world evidence.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-4jwy" id="s2" class="clip scene" data-start="2.5" data-duration="4">
+        <div data-hf-id="hf-rw22" class="scene-mark"><span data-hf-id="hf-apmx" class="spark">✳</span><span data-hf-id="hf-34si">ScoutSpark</span></div><div data-hf-id="hf-zyam" class="quiet">01 / Configure</div>
+        <div data-hf-id="hf-3yfe" class="hero-layout" style="grid-template-columns:.68fr 1.32fr; gap:60px;">
+          <div data-hf-id="hf-dckm" class="hero-copy">
+            <div data-hf-id="hf-2in7" class="hero-kicker">START WITH A QUESTION</div>
+            <h1 data-hf-id="hf-gxnl" class="hero-title" style="font-size:64px;">Set the scope.<br data-hf-id="hf-rsrt">Choose the mode.</h1>
+            <p data-hf-id="hf-et22" class="hero-sub" style="font-size:22px;">A structured request defines the domain, deadline, and how many ideas to explore.</p>
+          </div>
+          <div data-hf-id="hf-333z" class="window config-window">
+            <div data-hf-id="hf-ws90" class="window-bar"><span data-hf-id="hf-b53e" class="traffic"></span><span data-hf-id="hf-d4mj" class="traffic"></span><span data-hf-id="hf-dixk" class="traffic"></span><span data-hf-id="hf-yvv6" class="window-label">ScoutSpark / research setup</span></div>
+            <div data-hf-id="hf-k10i" class="hero-window-body" style="padding:30px 36px;">
+              <div data-hf-id="hf-nf8b" class="app-title">ScoutSpark</div><div data-hf-id="hf-cc9u" class="app-caption">Review the source plan and scoring weights before starting research.</div>
+              <div data-hf-id="hf-6bos" class="field-label">Data mode</div><div data-hf-id="hf-y7yw"><span data-hf-id="hf-4dwy" class="fake-radio"><i data-hf-id="hf-hjr4" class="radio on"></i> Offline demo</span><span data-hf-id="hf-dbjc" class="fake-radio"><i data-hf-id="hf-p39d" class="radio"></i> Live sources</span></div>
+              <div data-hf-id="hf-8k45" class="field-label">Synthetic fixture set</div><div data-hf-id="hf-r8h0" class="field">ai_engineering_capstone_01&#160; ▾</div>
+              <div data-hf-id="hf-2l4o" class="notice">Fully offline demo: frozen synthetic sources and deterministic model responses. Not real-world evidence.</div>
+              <div data-hf-id="hf-z79l" class="field-label">Domain</div><div data-hf-id="hf-ctit" class="field">AI engineering</div>
+              <div data-hf-id="hf-rec5" class="field-label">Evaluation priority</div><div data-hf-id="hf-be4e" class="field">Balanced&#160; ▾</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-2blt" id="s3" class="clip scene preview-scene" data-start="6.5" data-duration="5">
+        <div data-hf-id="hf-sad3" class="scene-mark"><span data-hf-id="hf-bwk0" class="spark">✳</span><span data-hf-id="hf-3j3j">ScoutSpark</span></div><div data-hf-id="hf-83ep" class="quiet">02 / Review the plan</div>
+        <h2 data-hf-id="hf-z3tq" class="preview-heading">Preview before research.</h2>
+        <p data-hf-id="hf-3ny9" class="preview-caption">Check the resolved settings before any search begins.</p>
+        <div data-hf-id="hf-7z9p" class="window preview-window">
+          <div data-hf-id="hf-cr0e" class="preview-left">
+            <div data-hf-id="hf-fkww" class="preview-btn">Preview and validate configuration</div>
+            <p data-hf-id="hf-f7hs" class="preview-helper">Preview checks that your request and settings can run, then shows which sources, limits, evaluation weights, and budget will be used. It does not start research or call search providers or the model.</p>
+            <div data-hf-id="hf-d0yh" class="field-label">Run mode</div><div data-hf-id="hf-k3ks" class="field" style="width:220px;">sequential&#160; ▾</div>
+          </div>
+          <div data-hf-id="hf-13ed" class="preview-right">
+            <div data-hf-id="hf-uw8w" class="checkmark">✓</div><div data-hf-id="hf-fnok" class="tag">Resolved preview</div>
+            <div data-hf-id="hf-uj8o" class="resolved">
+              <div data-hf-id="hf-2mfn" class="resolved-card"><div data-hf-id="hf-3rll" class="resolved-label">Domain</div><div data-hf-id="hf-rczx" class="resolved-value">AI engineering</div></div>
+              <div data-hf-id="hf-lz77" class="resolved-card"><div data-hf-id="hf-5s6s" class="resolved-label">Search preset</div><div data-hf-id="hf-9ni0" class="resolved-value">Balanced search</div></div>
+              <div data-hf-id="hf-lkw6" class="resolved-card"><div data-hf-id="hf-2pmk" class="resolved-label">Rubric</div><div data-hf-id="hf-79ws" class="resolved-value">Balanced</div></div>
+              <div data-hf-id="hf-l6l5" class="resolved-card"><div data-hf-id="hf-rppx" class="resolved-label">Providers</div><div data-hf-id="hf-rr38" class="resolved-value">1 ready</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-417r" id="s4" class="clip scene results-scene" data-start="11.5" data-duration="6">
+        <div data-hf-id="hf-soo4" class="scene-mark"><span data-hf-id="hf-bi8z" class="spark">✳</span><span data-hf-id="hf-3xek">ScoutSpark</span></div><div data-hf-id="hf-ohhc" class="quiet">03 / Inspect the result</div>
+        <div data-hf-id="hf-uzsc" class="results-header"><div data-hf-id="hf-v7z5" class="results-heading">Top 2 finalists by weighted score</div><div data-hf-id="hf-nnxg" class="synthetic-chip">Synthetic demo data · not real-world evidence</div></div>
+        <div data-hf-id="hf-4tzf" class="results-window">
+          <article data-hf-id="hf-bggn" class="result-card result-one">
+            <div data-hf-id="hf-b11p" class="result-top"><span data-hf-id="hf-w0nx" class="rank">#1 finalist</span><span data-hf-id="hf-gej3" class="score">84.2 / 100</span></div>
+            <div data-hf-id="hf-czgt" class="result-title">Campus energy use explorer</div>
+            <div data-hf-id="hf-56a2" class="result-desc">Compare energy patterns. Shape practical research questions.</div>
+            <div data-hf-id="hf-tp5s" class="scoreline"><span data-hf-id="hf-lvch">Evidence quality</span><strong data-hf-id="hf-azg1">4.2 / 5 · balanced</strong></div>
+            <div data-hf-id="hf-vntg" class="evidence-row"><i data-hf-id="hf-8pft" class="evidence-dot"></i><span data-hf-id="hf-zw53">Evidence to inspect</span></div>
+          </article>
+          <article data-hf-id="hf-mlfp" class="result-card result-two">
+            <div data-hf-id="hf-lyrl" class="result-top"><span data-hf-id="hf-wage" class="rank">#2 finalist</span><span data-hf-id="hf-l42o" class="score">78.6 / 100</span></div>
+            <div data-hf-id="hf-1e64" class="result-title">Accessible campus route planner</div>
+            <div data-hf-id="hf-q30h" class="result-desc">Map access needs. Make route assumptions visible.</div>
+            <div data-hf-id="hf-t7yw" class="scoreline"><span data-hf-id="hf-621o">Evaluation method</span><strong data-hf-id="hf-2bc2">3.8 / 5 · balanced</strong></div>
+            <div data-hf-id="hf-wlt8" class="evidence-row"><i data-hf-id="hf-yldp" class="evidence-dot"></i><span data-hf-id="hf-ss8x">Citations to inspect</span></div>
+          </article>
+        </div>
+        <div data-hf-id="hf-3eig" class="caveat"><span data-hf-id="hf-7nw0" class="caveat-icon">!</span><span data-hf-id="hf-6plx">A high score does not clear a failed gate. Review gate warnings and evidence before choosing an idea.</span></div>
+      </section>
+
+      <section data-hf-id="hf-vg1i" id="s5" class="clip scene" data-start="17.5" data-duration="2.5">
+        <div data-hf-id="hf-t2z5" class="scene-mark"><span data-hf-id="hf-5gqq" class="spark">✳</span><span data-hf-id="hf-4bpl">ScoutSpark</span></div>
+        <div data-hf-id="hf-uj03" class="close-layout"><div data-hf-id="hf-mnf5" class="close-spark">✳</div><div data-hf-id="hf-21y1" class="close-title">Good ideas get reviewed.</div><div data-hf-id="hf-zq6k" class="close-copy">Review the source plan and scoring weights before starting research.</div><div data-hf-id="hf-xv2j" class="close-line"></div></div>
+      </section>
+
+      <audio data-hf-id="hf-xfnu" id="music" class="audio" data-start="0" data-duration="20" data-track-index="10" data-volume="0.32" data-fade-in="0.35" data-fade-out="1" src="assets/music/happy-beats-business-moves-vol-1-by-ende-dot-app.mp3"></audio>
+      <audio data-hf-id="hf-sipt" id="click-preview" data-start="6.52" data-duration="0.01" data-track-index="11" data-volume="0.62" src="assets/sfx/interface/click_003.ogg"></audio>
+      <audio data-hf-id="hf-r8ba" id="result-accent" data-start="11.5" data-duration="0.19" data-track-index="12" data-volume="0.34" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      // The first frame stays clean; each scene's content settles without moving its timed clip.
+      tl.fromTo(".hero-title", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0.18);
+      tl.fromTo(".hero-sub, .hero-rule", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.42, stagger: 0.08, ease: "power2.out" }, 0.5);
+      tl.fromTo(".hero-window", { x: 38, opacity: 0 }, { x: 0, opacity: 1, duration: 0.62, ease: "power3.out" }, 0.24);
+      tl.fromTo(".config-window", { x: 35, opacity: 0 }, { x: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 2.72);
+      tl.fromTo("#s2 .hero-title", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 2.72);
+      tl.fromTo(".preview-heading, .preview-caption", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, stagger: 0.08, ease: "power2.out" }, 6.52);
+      tl.fromTo(".preview-window", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 6.9);
+      // Beat-grid: finalist cards at 12.02s and 12.52s, then remain together for reading.
+      tl.fromTo(".results-heading", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 11.52);
+      tl.fromTo(".result-one", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 12.02);
+      tl.fromTo(".result-two", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 12.52);
+      // Beat-locked to the bundled preset's 17.02s strong cue.
+      tl.fromTo(".caveat", { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 17.02);
+      // Beat-locked to the 17.52s strong cue; hold through the final frame.
+      tl.fromTo(".close-layout", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 17.52);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

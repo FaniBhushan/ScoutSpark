@@ -9,6 +9,7 @@ from pydantic import Field, model_validator
 from .candidate_idea import CandidateIdea
 from .common import ContractModel, NonEmptyText
 from .source_record import SourceRecord
+from .run_diagnostics import ShortfallReason
 
 
 class ScoutResult(ContractModel):
@@ -18,6 +19,15 @@ class ScoutResult(ContractModel):
     candidates: list[CandidateIdea] = Field(default_factory=list)
     sources: list[SourceRecord] = Field(default_factory=list)
     warnings: list[NonEmptyText] = Field(default_factory=list)
+    generated_candidate_count: int = Field(default=0, ge=0)
+    generation_target_count: int = Field(default=0, ge=0)
+    generation_batch_count: int = Field(default=0, ge=0)
+    invalid_response_batch_count: int = Field(default=0, ge=0)
+    duplicate_candidate_count: int = Field(default=0, ge=0)
+    unsupported_candidate_count: int = Field(default=0, ge=0)
+    correction_attempt_count: int = Field(default=0, ge=0)
+    correction_succeeded: bool = False
+    reason_codes: list[ShortfallReason] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def exclude_internal_ideas(self) -> "ScoutResult":

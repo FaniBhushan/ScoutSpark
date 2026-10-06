@@ -191,6 +191,9 @@ async def recover_empty_result(request, search, rubric, result, *, adapters, bud
         data["status"] = "insufficient_coverage"
         data["finalist_candidate_ids"] = []
     data["proposal_failures"] = {**result.proposal_failures, **latest.proposal_failures}
+    data["proposal_failure_codes"] = {
+        **result.proposal_failure_codes, **latest.proposal_failure_codes,
+    }
     data["recovery_history"] = [history.model_dump(mode="python")]
     data["warnings"] = list(dict.fromkeys([
         *result.warnings, *latest.warnings,

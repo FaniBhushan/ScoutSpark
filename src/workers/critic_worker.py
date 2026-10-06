@@ -70,9 +70,13 @@ class CriticWorker:
             if len({candidate.candidate_id for candidate in candidates}) != len(candidates):
                 raise ValueError("candidate IDs must be unique")
             if not library.chunks:
-                return CriticResult(warnings=["No source chunks available for evaluation."])
+                return CriticResult(
+                    warnings=["No source chunks available for evaluation."],
+                    reason_codes=["source_unavailable"],
+                )
             evaluations = []
             warnings = []
+            reason_codes = []
             for candidate_index, candidate in enumerate(candidates):
                 with (
                     self.tracer.span("candidate_evaluation", task_id=candidate.candidate_id)
@@ -85,6 +89,8 @@ class CriticWorker:
                             f"Candidate {candidate.candidate_id} was skipped because no relevant evidence was found."
                         )
                         self._trace_candidate_skip(candidate, "no_relevant_evidence")
+                        if "assessment_failure" not in reason_codes:
+                            reason_codes.append("assessment_failure")
                         continue
                     try:
                         assessment = await self.judge.assess(request, candidate, evidence, rubric)
@@ -95,12 +101,15 @@ class CriticWorker:
                         warnings.extend(
                             f"Candidate {pending.candidate_id} was not scored because the research stage allowance was reached."
                             for pending in candidates[candidate_index:])
+                        reason_codes.append("budget_exhausted")
                         break
                     except ValidationError:
                         warnings.append(
                             f"Candidate {candidate.candidate_id} was not scored because its Critic response failed schema validation."
                         )
                         self._trace_candidate_skip(candidate, "invalid_critic_schema")
+                        if "assessment_failure" not in reason_codes:
+                            reason_codes.append("assessment_failure")
                         continue
                     repaired_source_ids = self._repair_chunk_source_ids(assessment, evidence)
                     repaired_citations = self._fill_unambiguous_chunk_ids(assessment, evidence)
@@ -115,6 +124,8 @@ class CriticWorker:
                             f"Candidate {candidate.candidate_id} was not scored because its Critic {category} check failed."
                         )
                         self._trace_candidate_skip(candidate, f"invalid_critic_{category}")
+                        if "assessment_failure" not in reason_codes:
+                            reason_codes.append("assessment_failure")
                         continue
                     if repaired_source_ids or repaired_citations:
                         if repaired_citations and not repaired_source_ids:
@@ -126,7 +137,10 @@ class CriticWorker:
                             self.tracer.event(
                                 "critic", "retrieved_citation_repaired", task_id=candidate.candidate_id
                             )
-            return CriticResult(evaluations=evaluations, warnings=warnings)
+            return CriticResult(
+                evaluations=evaluations, warnings=warnings,
+                reason_codes=list(dict.fromkeys(reason_codes)),
+            )
 
     def _trace_candidate_skip(self, candidate: CandidateIdea, reason: str) -> None:
         if self.tracer:

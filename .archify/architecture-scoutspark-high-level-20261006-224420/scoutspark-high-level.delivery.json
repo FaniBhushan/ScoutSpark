@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "619131cf-4442-4efa-8251-8ef5d3d936d3",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/candidate.json",
+  "output": "/Users/fanibhushan/ScoutSpark/.archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+  "specification": {
+    "sha256": "238980212c7f1d0e77a1c22bd987a75bc22874320bee7ccc735dbf125f939984",
+    "bytes": 3393
+  },
+  "artifact": {
+    "sha256": "4a90bdae00645084233aaaae6b8fc5753ff97d2892624f089903baa78b998716",
+    "bytes": 758598
+  }
+}

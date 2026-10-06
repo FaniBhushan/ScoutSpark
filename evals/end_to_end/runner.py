@@ -24,6 +24,7 @@ async def run_cases(cases, client, *, mode="sequential", pricing=None,
             "proposal_counts": {"requested": case.expected_request.finalist_count,
                                 "returned": 0, "target_met": False},
             "expected_source_types": case.expected.get("required_source_types", []),
+            "failure_stage": None,
             "human_review": {key: case.expected.get(key, []) for key in (
                 "must_satisfy", "forbidden_outcomes", "relevant_source_ids")},
         }
@@ -55,6 +56,7 @@ async def run_cases(cases, client, *, mode="sequential", pricing=None,
             record["result"] = result.model_dump(mode="json")
         except Exception as error:
             record["outcome"] = "error"
+            record["failure_stage"] = getattr(error, "stage", type(error).__name__)
             record["error"] = {"type": type(error).__name__, "message": safe_error_message(error)}
             # Transport failures can hide billable work. Stop all later cases on
             # errors; never retry automatically or claim a partial run passed.

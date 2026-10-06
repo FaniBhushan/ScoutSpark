@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ScoutSpark | Low level run architecture",
+    "locale": "en",
+    "output": ".archify/architecture-scoutspark-low-level-20261006-224420/scoutspark-low-level.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "git@github.com:FaniBhushan/SparkScout.git",
+      "revision": "3b7f558fe0a680dbf56a25323bfa9a10cc19c7b1",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {"id":"service","type":"backend","label":"Run service","sublabel":"budgets + workers","pos":[40,330],"size":[155,68],"sources":[{"path":"src/application/service.py","line":180,"end_line":214},{"path":"src/application/service.py","line":219,"end_line":249}]},
+    {"id":"coordinator","type":"backend","label":"Coordinator","sublabel":"controls stages","pos":[300,330],"size":[160,68],"sources":[{"path":"src/application/service.py","line":267,"end_line":273},{"path":"src/orchestration/coordinator.py","line":51,"end_line":75}]},
+    {"id":"scout","type":"backend","label":"Scout worker","sublabel":"queries + candidates","pos":[555,125],"size":[160,68],"sources":[{"path":"src/workers/scout_worker.py","line":51,"end_line":64},{"path":"src/workers/scout_worker.py","line":83,"end_line":85}]},
+    {"id":"library","type":"backend","label":"Library worker","sublabel":"sources + chunks","pos":[555,535],"size":[160,68],"sources":[{"path":"src/workers/library_worker.py","line":33,"end_line":48},{"path":"src/workers/library_worker.py","line":148,"end_line":155}]},
+    {"id":"join","type":"security","label":"Validated join","sublabel":"merge + quarantine","pos":[810,330],"size":[160,68],"sources":[{"path":"src/orchestration/coordinator.py","line":84,"end_line":109},{"path":"src/orchestration/coordinator.py","line":130,"end_line":146}]},
+    {"id":"index","type":"database","label":"Local index","sublabel":"TF-IDF + keywords","pos":[810,535],"size":[160,68],"sources":[{"path":"src/orchestration/coordinator.py","line":172,"end_line":203},{"path":"src/retrieval/hybrid.py","line":63,"end_line":75}]},
+    {"id":"critic","type":"backend","label":"Critic worker","sublabel":"retrieve + assess","pos":[1070,330],"size":[160,68],"sources":[{"path":"src/orchestration/coordinator.py","line":202,"end_line":209},{"path":"src/workers/critic_worker.py","line":62,"end_line":90}]},
+    {"id":"ranking","type":"backend","label":"Ranking","sublabel":"weights + hard gates","pos":[1320,330],"size":[160,68],"sources":[{"path":"src/orchestration/coordinator.py","line":221,"end_line":240}]},
+    {"id":"finalizer","type":"backend","label":"Proposal checks","sublabel":"draft + verify citations","pos":[1320,535],"size":[175,68],"sources":[{"path":"src/application/finalization.py","line":72,"end_line":107},{"path":"src/application/finalization.py","line":145,"end_line":170}]},
+    {"id":"output","type":"frontend","label":"Run result","sublabel":"proposals + warnings","pos":[1580,535],"size":[170,68],"sources":[{"path":"src/application/finalization.py","line":204,"end_line":215},{"path":"src/ui/app.py","line":326,"end_line":338}]},
+    {"id":"adapters","type":"external","label":"Source adapters","sublabel":"GitHub / Tavily / local","pos":[300,535],"size":[160,68],"sources":[{"path":"src/adapters/registry.py","line":39,"end_line":65}]},
+    {"id":"llm","type":"external","label":"LLM client","sublabel":"budgeted model calls","pos":[300,125],"size":[160,68],"sources":[{"path":"src/application/service.py","line":198,"end_line":210},{"path":"src/application/service.py","line":219,"end_line":249}]}
+  ],
+  "connections": [
+    {"from":"service","to":"coordinator","label":"start run"},
+    {"from":"coordinator","to":"scout","label":"dispatch"},
+    {"from":"coordinator","to":"library","label":"dispatch"},
+    {"from":"scout","to":"join","label":"candidates"},
+    {"from":"library","to":"join","label":"evidence"},
+    {"from":"join","to":"critic","label":"validated input"},
+    {"from":"library","to":"index","label":"chunks"},
+    {"from":"index","to":"critic","label":"top passages"},
+    {"from":"critic","to":"ranking","label":"assessments"},
+    {"from":"ranking","to":"finalizer","label":"eligible ideas"},
+    {"from":"finalizer","to":"output","label":"checked result"},
+    {"from":"adapters","to":"library","label":"search records"},
+    {"from":"llm","to":"scout","label":"plan + generate"}
+  ],
+  "cards": [
+    {"dot":"cyan","title":"Execution","items":["Scout and Library may run sequentially or concurrently.","Both branches are required before the join; a branch failure stops evaluation."]},
+    {"dot":"amber","title":"Guarded output","items":["Minimum Library coverage can skip Critic.","Finalization tries the next eligible idea after a rejected draft.","One bounded recovery round may run if no proposal survives."]}
+  ]
+}

@@ -36,12 +36,14 @@ class LLMCandidateGenerator:
     """Generate Scout candidates using an injected LLM client."""
 
     def __init__(
-        self, llm_client: LLMClient, *, max_output_tokens: int, tracer: RunTracer | None = None
+        self, llm_client: LLMClient, *, max_output_tokens: int, max_batches: int = 8,
+        tracer: RunTracer | None = None
     ) -> None:
-        if max_output_tokens <= 0:
-            raise ValueError("max_output_tokens must be positive")
+        if max_output_tokens <= 0 or max_batches <= 0:
+            raise ValueError("max_output_tokens and max_batches must be positive")
         self.llm_client = llm_client
         self.max_output_tokens = max_output_tokens
+        self.max_batches = max_batches
         self.tracer = tracer
 
     async def generate(
@@ -50,8 +52,22 @@ class LLMCandidateGenerator:
         sources: list[SourceRecord],
         *, recovery_feedback: dict | None = None,
     ) -> list[CandidateIdea]:
+        candidates, _ = await self.generate_with_metrics(
+            request, sources, recovery_feedback=recovery_feedback
+        )
+        return candidates
+
+    async def generate_with_metrics(
+        self,
+        request: InputRequest,
+        sources: list[SourceRecord],
+        *,
+        recovery_feedback: dict | None = None,
+    ) -> tuple[list[CandidateIdea], dict[str, int]]:
         if not sources:
-            return []
+            return [], {"invalid_response_batches": 0, "duplicate_candidates": 0,
+                        "correction_attempts": 0, "correction_succeeded": 0,
+                        "generated_candidate_count": 0}
 
         compact_sources = [
             source.model_dump(
@@ -82,41 +98,68 @@ class LLMCandidateGenerator:
                     compact["additional_evidence_excerpt"] = {
                         "chunk_id": excerpts[1].chunk_id, "text": excerpts[1].text,
                     }
+        metrics: dict[str, int] = {}
         candidates = await generate_candidate_batches(
             self.llm_client, request, compact_sources,
             max_output_tokens=self.max_output_tokens, tracer=self.tracer,
-            recovery_feedback=recovery_feedback,
+            recovery_feedback=recovery_feedback, metrics=metrics,
+            max_batches=self.max_batches,
         )
         # Synthetic ideas can influence subsequent batches, but never leave generation.
-        return [item for item in candidates if item.origin != "synthetic"]
+        return [item for item in candidates if item.origin != "synthetic"], metrics
 
 
 async def generate_candidate_batches(
     client: LLMClient, request: InputRequest, sources: list[dict], *,
     max_output_tokens: int, tracer: RunTracer | None,
     recovery_feedback: dict | None = None,
+    metrics: dict[str, int] | None = None,
+    max_batches: int = 8,
 ) -> list[CandidateIdea]:
     """Bound generation output and retain valid ideas when a later batch is malformed.
 
-    Use at most three ideas per response, with a finite batch count and one extra
-    attempt for a truncated initial response. Compact idea summaries prevent
-    repeated ideas without resending full prior outputs. Shared run budgets
-    remain authoritative; budget and transport failures still propagate.
+    Use at most three ideas per response and allow one schema-correction attempt.
+    Compact idea summaries prevent repeated ideas without resending full prior
+    outputs. Shared run budgets remain authoritative; budget and transport
+    failures still propagate.
     """
 
     from src.llm.candidate_batches import merge_candidates
 
     batch_size = min(3, max(1, max_output_tokens // 700))
-    batch_limit = (request.desired_candidate_count + batch_size - 1) // batch_size
+    if max_batches <= 0:
+        raise ValueError("max_batches must be positive")
     candidates: list[CandidateIdea] = []
-    initial_recovery_used = False
+    correction_used = False
+    counters = metrics if metrics is not None else {}
+    counters.setdefault("invalid_response_batches", 0)
+    counters.setdefault("duplicate_candidates", 0)
+    counters.setdefault("unsupported_candidates", 0)
+    counters.setdefault("correction_attempts", 0)
+    counters.setdefault("correction_succeeded", 0)
+    counters.setdefault("generated_candidate_count", 0)
+    counters.setdefault("batch_count", 0)
     active_recovery_feedback = dict(recovery_feedback or {})
-    for batch_index in range(batch_limit + 1):
+    batch_index = 0
+    max_attempts = max_batches
+    while batch_index < max_attempts:
         if len(candidates) >= request.desired_candidate_count:
             break
-        if batch_index >= batch_limit and not initial_recovery_used:
-            break
         requested_count = min(batch_size, request.desired_candidate_count - len(candidates))
+        counters["batch_count"] += 1
+        active_recovery_feedback.update({
+            "candidate_target": request.desired_candidate_count,
+            "accepted_count": len(candidates),
+            "remaining_count": request.desired_candidate_count - len(candidates),
+            "invalid_response_batches": counters["invalid_response_batches"],
+            "duplicates_rejected": counters["duplicate_candidates"],
+            "unsupported_ideas_rejected": counters["unsupported_candidates"],
+            "request_fit_reminder": "Each idea must meet the original user needs and constraints.",
+        })
+        # Preserve upstream recovery context while exposing local accepted work.
+        # Detailed current-run ideas remain in BATCH_JSON.existing_ideas.
+        if not active_recovery_feedback.get("previous_ideas"):
+            active_recovery_feedback["previous_ideas"] = [item.title for item in candidates]
         context = {
             "REQUEST_JSON": request, "SOURCE_RECORDS_JSON": sources,
             "BATCH_JSON": {
@@ -145,22 +188,39 @@ async def generate_candidate_batches(
                 raise
             if tracer:
                 tracer.event("candidate_generation", "batch_response_failed", count=len(candidates))
-            if candidates:
-                break
-            if initial_recovery_used:
-                raise
+            counters["invalid_response_batches"] += 1
             if isinstance(error, ValidationError):
                 # Share only contract paths and Pydantic error codes—not rejected
-                # output or message text—with the lower-cost recovery attempt.
+                # output or message text—with the correction attempt.
                 active_recovery_feedback["response_schema_issues"] = safe_validation_hints(error)
-            # Retry only the failed initial batch with a smaller output request.
-            initial_recovery_used = True
+            else:
+                active_recovery_feedback["previous_batch_issue"] = "invalid_or_truncated_response"
+            if correction_used:
+                break
+            # Retry one malformed response with safe schema hints, retaining all
+            # candidates accepted from earlier batches. The normal run client
+            # charges this correction attempt to the same token/cost budget.
+            correction_used = True
+            counters["correction_attempts"] += 1
             batch_size = max(1, batch_size // 2)
+            batch_index += 1
             continue
-        merged = merge_candidates(candidates, batch[:requested_count], sources)
+        counters["correction_succeeded"] = int(correction_used)
+        counters["generated_candidate_count"] += sum(
+            item.origin != "synthetic" for item in batch[:requested_count]
+        )
+        merged = merge_candidates(candidates, batch[:requested_count], sources, metrics=counters)
         if len(merged) == len(candidates):
-            break  # More paid attempts on unchanged evidence are unlikely to help.
+            active_recovery_feedback["previous_batch_issue"] = "no_new_unique_supported_ideas"
+            if candidates:
+                # The next batch already received the measured deficit and
+                # rejection counts. Keep valid work and avoid repeating an
+                # unchanged answer through the rest of the attempt cap.
+                break
+            batch_index += 1
+            continue
         candidates = merged
         if tracer:
             tracer.event("candidate_generation", "batch_retained", count=len(candidates))
+        batch_index += 1
     return candidates

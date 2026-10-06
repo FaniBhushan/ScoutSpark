@@ -12,6 +12,7 @@ def _normalized(text: str) -> str:
 
 def merge_candidates(
     existing: list[CandidateIdea], additions: list[CandidateIdea], sources: list[dict],
+    *, metrics: dict[str, int] | None = None,
 ) -> list[CandidateIdea]:
     """Merge distinct ideas, retaining unsupported exploration as synthetic.
 
@@ -20,11 +21,16 @@ def merge_candidates(
     """
 
     allowed_sources = {source["source_id"] for source in sources}
+    counters = metrics if metrics is not None else {}
+    counters.setdefault("duplicate_candidates", 0)
+    counters.setdefault("unsupported_candidates", 0)
     kept = list(existing)
     for candidate in additions:
         if any(ref.source_id not in allowed_sources for ref in candidate.evidence):
+            counters["unsupported_candidates"] += 1
             continue
         if not candidate.evidence:
+            counters["unsupported_candidates"] += 1
             candidate = candidate.model_copy(update={"origin": "synthetic"})
         duplicate = any(
             _normalized(candidate.title) == _normalized(old.title)
@@ -35,6 +41,7 @@ def merge_candidates(
             for old in kept
         )
         if duplicate:
+            counters["duplicate_candidates"] += 1
             continue
         kept.append(candidate.model_copy(update={"candidate_id": f"candidate-{len(kept) + 1:02d}"}))
     return kept

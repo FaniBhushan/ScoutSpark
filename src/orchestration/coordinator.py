@@ -12,7 +12,7 @@ import unicodedata
 from uuid import uuid4
 
 from src.runtime.budgets import BudgetExceeded
-from src.runtime.failures import failure_code
+from src.runtime.failures import StageFailure
 from src.models import (
     EvaluationConfiguration,
     CriticResult,
@@ -38,14 +38,15 @@ from src.workers.evidence import build_source_chunks
 RunMode = Literal["sequential", "parallel"]
 
 
-class OrchestrationError(RuntimeError):
+class OrchestrationError(StageFailure):
     """A required run stage failed, so the Critic was not given partial input."""
 
     def __init__(self, stage: str, error: BaseException) -> None:
-        self.stage = stage
-        self.error_type = type(error).__name__
-        self.code = failure_code(error)
-        super().__init__(f"{stage} stage failed ({self.error_type}): {error}")
+        self.error = error
+        super().__init__(stage, error)
+        # Preserve the cause for internal diagnostics; UIs use failure_details,
+        # which sanitizes model validation failures before display.
+        self.args = (f"{stage} stage failed ({self.error_type}): {error}",)
 
 
 class Orchestrator:
@@ -94,16 +95,41 @@ class Orchestrator:
                     # An ambiguous ID cannot safely back a candidate or citation.
                     # Remove affected candidates rather than silently rewriting evidence.
                     warning = "Conflicting live sources quarantined: " + ", ".join(sorted(quarantined))
+                    retained_candidates = [
+                        candidate for candidate in scout_result.candidates
+                        if not any(ref.source_id in quarantined for ref in candidate.evidence)
+                    ]
+                    scout_reasons = list(scout_result.reason_codes)
+                    if len(retained_candidates) < len(scout_result.candidates):
+                        scout_reasons.append("unsupported_evidence")
                     scout_result = ScoutResult(
-                        candidates=[candidate for candidate in scout_result.candidates
-                                    if not any(ref.source_id in quarantined for ref in candidate.evidence)],
+                        candidates=retained_candidates,
                         sources=[source for source in scout_result.sources if source.source_id not in quarantined],
                         warnings=[*scout_result.warnings, warning],
+                        generated_candidate_count=scout_result.generated_candidate_count,
+                        generation_target_count=scout_result.generation_target_count,
+                        generation_batch_count=scout_result.generation_batch_count,
+                        invalid_response_batch_count=scout_result.invalid_response_batch_count,
+                        duplicate_candidate_count=scout_result.duplicate_candidate_count,
+                        unsupported_candidate_count=(
+                            scout_result.unsupported_candidate_count
+                            + len(scout_result.candidates) - len(retained_candidates)
+                        ),
+                        correction_attempt_count=scout_result.correction_attempt_count,
+                        correction_succeeded=scout_result.correction_succeeded,
+                        reason_codes=list(dict.fromkeys(scout_reasons)),
                     )
                     library_result = LibraryResult(
                         sources=[source for source in library_result.sources if source.source_id not in quarantined],
                         chunks=[chunk for chunk in library_result.chunks if chunk.source_id not in quarantined],
                         warnings=[*library_result.warnings, warning],
+                        reason_codes=library_result.reason_codes,
+                        requested_usable_source_count=library_result.requested_usable_source_count,
+                        usable_source_count=sum(source.retrieval_status in (
+                            RetrievalStatus.SUCCESS, RetrievalStatus.PARTIAL
+                        ) for source in library_result.sources if source.source_id not in quarantined),
+                        missing_required_source_types=library_result.missing_required_source_types,
+                        recovery_query_count=library_result.recovery_query_count,
                     )
                     if self.tracer:
                         self.tracer.event("orchestrator", "source_receipt_quarantined", count=len(quarantined))
@@ -120,7 +146,14 @@ class Orchestrator:
                         chunks[chunk.chunk_id] = chunk
                         existing_texts.add((chunk.source_id, chunk.text))
                 library_result = LibraryResult(
-                    sources=merged_library, chunks=list(chunks.values()), warnings=library_result.warnings,
+                    sources=merged_library, chunks=list(chunks.values()),
+                    warnings=library_result.warnings, reason_codes=library_result.reason_codes,
+                    requested_usable_source_count=library_result.requested_usable_source_count,
+                    usable_source_count=sum(source.retrieval_status in (
+                        RetrievalStatus.SUCCESS, RetrievalStatus.PARTIAL
+                    ) for source in merged_library),
+                    missing_required_source_types=library_result.missing_required_source_types,
+                    recovery_query_count=library_result.recovery_query_count,
                 )
             except OrchestrationError:
                 raise
@@ -158,7 +191,8 @@ class Orchestrator:
 
             if coverage_warnings:
                 critic_result = CriticResult(
-                    warnings=["Critic skipped because minimum Library coverage was not met."]
+                    warnings=["Critic skipped because minimum Library coverage was not met."],
+                    reason_codes=["source_unavailable"],
                 )
                 retrieval_index = None
                 if self.tracer:
@@ -179,6 +213,11 @@ class Orchestrator:
                             sources=library_result.sources,
                             chunks=retriever.chunks,
                             warnings=library_result.warnings,
+                            reason_codes=library_result.reason_codes,
+                            requested_usable_source_count=library_result.requested_usable_source_count,
+                            usable_source_count=library_result.usable_source_count,
+                            missing_required_source_types=library_result.missing_required_source_types,
+                            recovery_query_count=library_result.recovery_query_count,
                         )
                         retrieval_index = RetrievalIndexInfo(
                             index_id=f"{run_id}:library",
@@ -324,9 +363,10 @@ class Orchestrator:
         candidate_ids = [candidate.candidate_id for candidate in scout.candidates]
         if len(candidate_ids) != len(set(candidate_ids)):
             raise OrchestrationError("join", ValueError("Scout returned duplicate candidate IDs"))
-        if len(candidate_ids) > request.desired_candidate_count:
+        allowed_candidate_count = (3 * request.desired_candidate_count + 1) // 2
+        if len(candidate_ids) > allowed_candidate_count:
             raise OrchestrationError(
-                "join", ValueError("Scout exceeded desired_candidate_count")
+                "join", ValueError("Scout exceeded its configured over-generation target")
             )
 
         scout_source_ids = {source.source_id for source in scout.sources}

@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import Field, PositiveInt
 
 from .common import ContractModel, Identifier, NonEmptyText
-from .input_request import DetailList, DomainText, InterestList, SkillLevel
+from .input_request import DetailList, DomainText, InterestAreaList, SkillLevel
 from .search_defaults import SearchLimits
 from .source_configuration import EvidenceTier, SourcePolicy
 
@@ -18,7 +18,7 @@ class RequestSuggestions(ContractModel):
 
     domain: DomainText | None = None
     time_limit_days: PositiveInt | None = None
-    interests: InterestList | None = None
+    interests: InterestAreaList | None = None
     skill_level: SkillLevel | None = None
     team_size: PositiveInt | None = None
     available_resources: DetailList | None = None

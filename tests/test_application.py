@@ -4,6 +4,7 @@ import asyncio
 import json
 import tempfile
 import unittest
+from contextlib import nullcontext
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
@@ -156,9 +157,144 @@ class ApplicationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.final_proposals[0].total_score,
                          result.critic.evaluations[0].total_score)
         self.assertEqual({source.provider for source in result.source_manifest}, {"frozen_fixture"})
-        self.assertEqual(client.calls, [1000, 3000, 1000, 3000, 4000, 2000])
-        self.assertEqual(result.budget_usage.model_tokens, 3600)
+        self.assertEqual(client.calls, [1000, 3000, 3000, 1000, 3000, 4000, 2000])
+        self.assertEqual(result.budget_usage.model_tokens, 4200)
         self.assertEqual(result.budget_usage.provider_calls, {"frozen_fixture": 2})
+        diagnostics = result.diagnostics
+        self.assertIsNotNone(diagnostics)
+        self.assertEqual(diagnostics.accepted_candidate_count, len(result.scout.candidates))
+        self.assertEqual(diagnostics.assessed_candidate_count, len(result.critic.evaluations))
+        self.assertEqual(diagnostics.verified_proposal_count, len(result.final_proposals))
+        serialized = type(result).model_validate_json(result.model_dump_json())
+        self.assertEqual(serialized.diagnostics, diagnostics)
+
+        # The same structured counts are rendered by the UI and carried in JSON.
+        from src.ui.views import _result_view
+        rendered = []
+        with (
+            patch("src.ui.views.st.subheader"),
+            patch("src.ui.views.st.write"),
+            patch("src.ui.views.st.json"),
+            patch("src.ui.views.st.warning"),
+            patch("src.ui.views.st.expander", return_value=nullcontext()),
+            patch("src.ui.views.st.markdown", side_effect=lambda value, **_: rendered.append(value)),
+            patch("src.ui.views.st.dataframe"),
+            patch("src.ui.views.st.download_button"),
+            patch("src.ui.views.render_criteria_guide"),
+            patch("src.ui.views.render_scorecards"),
+            patch("src.ui.views.candidate_review_view", return_value=result),
+        ):
+            _result_view(result)
+        self.assertIn(
+            f"**Scout:** {diagnostics.accepted_candidate_count} accepted of "
+            f"{diagnostics.scout_generation_target_count} internal target "
+            f"({diagnostics.requested_candidate_count} user-requested results) "
+            f"({diagnostics.generated_candidate_count} generated).",
+            rendered,
+        )
+
+        # A gate can block proposal eligibility without misreporting Scout output.
+        failed_gate = result.critic.evaluations[0].hard_gates[0].model_copy(
+            update={"passed": False, "rationale": "Gate deliberately failed in this test."}
+        )
+        failed_assessment = result.critic.evaluations[0].model_copy(update={
+            "hard_gates": [failed_gate, *result.critic.evaluations[0].hard_gates[1:]],
+            "gate_passed": False,
+            "rejection_reasons": ["A required gate failed."],
+        })
+        from src.application.diagnostics import build_run_diagnostics
+        from src.models import CriticResult
+
+        gated_result = result.model_copy(update={
+            "critic": CriticResult(evaluations=[failed_assessment]),
+            "final_proposals": [],
+        })
+        gated_diagnostics = build_run_diagnostics(
+            gated_result, result.prepared_run.request, result.prepared_run.search
+        )
+        scout_shortfalls = [item for item in gated_diagnostics.shortfalls
+                            if item.stage == "scout_generation"]
+        self.assertEqual(len(scout_shortfalls), 1)
+        self.assertIn("underproduction", scout_shortfalls[0].reason_codes)
+        proposal_shortfall = next(
+            item for item in gated_diagnostics.shortfalls
+            if item.stage == "proposal_verification"
+        )
+        self.assertIn("hard_gate_rejection", proposal_shortfall.reason_codes)
+
+        def diagnostics_for(**changes):
+            variant = result.model_copy(update=changes)
+            return build_run_diagnostics(
+                variant, result.prepared_run.request, result.prepared_run.search
+            )
+
+        scout_partial = result.scout.model_copy(update={
+            "candidates": [], "generated_candidate_count": 1,
+            "reason_codes": ["invalid_output", "duplicate_candidates", "unsupported_evidence",
+                             "provider_unavailable", "underproduction"],
+        })
+        scout_counts = diagnostics_for(scout=scout_partial)
+        self.assertEqual(
+            set(next(item for item in scout_counts.shortfalls
+                     if item.stage == "scout_generation").reason_codes),
+            {"invalid_output", "duplicate_candidates", "unsupported_evidence",
+             "provider_unavailable", "underproduction"},
+        )
+
+        library_partial = result.library.model_copy(update={
+            "sources": [], "chunks": [], "reason_codes": ["source_unavailable"],
+        })
+        library_counts = diagnostics_for(library=library_partial)
+        self.assertIn(
+            "source_unavailable",
+            next(item for item in library_counts.shortfalls
+                 if item.stage == "library_coverage").reason_codes,
+        )
+
+        critic_partial = result.critic.model_copy(update={
+            "evaluations": [], "reason_codes": ["assessment_failure"],
+        })
+        critic_counts = diagnostics_for(critic=critic_partial)
+        self.assertIn(
+            "assessment_failure",
+            next(item for item in critic_counts.shortfalls
+                 if item.stage == "critic_assessment").reason_codes,
+        )
+
+        candidate_id = result.scout.candidates[0].candidate_id
+        for failure_code in ("drafting_failure", "verification_failure"):
+            failure_counts = diagnostics_for(
+                final_proposals=[],
+                proposal_failures={candidate_id: "safe test failure"},
+                proposal_failure_codes={candidate_id: failure_code},
+            )
+            self.assertIn(
+                failure_code,
+                next(item for item in failure_counts.shortfalls
+                     if item.stage == "proposal_verification").reason_codes,
+            )
+
+        exhausted_counts = diagnostics_for(
+            final_proposals=[], proposal_failures={candidate_id: "safe test failure"}
+        )
+        self.assertIn(
+            "eligible_candidates_exhausted",
+            next(item for item in exhausted_counts.shortfalls
+                 if item.stage == "proposal_verification").reason_codes,
+        )
+
+        budget_counts = diagnostics_for(final_proposals=[], budget_exhausted=True)
+        self.assertIn(
+            "budget_exhausted",
+            next(item for item in budget_counts.shortfalls
+                 if item.stage == "proposal_verification").reason_codes,
+        )
+        unknown_counts = diagnostics_for(final_proposals=[])
+        self.assertIn(
+            "unknown",
+            next(item for item in unknown_counts.shortfalls
+                 if item.stage == "proposal_verification").reason_codes,
+        )
 
     async def test_prepared_run_uses_reviewed_configuration_without_resolving_again(self):
         prepared = prepare_run(

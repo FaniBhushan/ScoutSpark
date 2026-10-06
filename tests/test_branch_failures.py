@@ -6,11 +6,22 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 from src.runtime.budgets import BudgetExceeded
+from src.runtime.failures import StageFailure, failure_details
 from src.models import InputRequest
 from src.orchestration.coordinator import OrchestrationError, Orchestrator
 
 
 class BranchFailureTests(unittest.IsolatedAsyncioTestCase):
+    async def test_stage_failure_details_are_stable_and_do_not_echo_cause(self):
+        secret_like_output = "sk-live-super-secret-response"
+        details = failure_details(
+            StageFailure("library", ValueError(secret_like_output)), stage_hint="research"
+        )
+        self.assertEqual(details["stage"], "library")
+        self.assertEqual(details["code"], "stage_failure")
+        self.assertNotIn(secret_like_output, str(details))
+        self.assertEqual(failure_details(TimeoutError("elapsed"))["code"], "timeout")
+
     async def test_budget_exhaustion_has_same_type_in_both_modes(self):
         request = InputRequest(domain="AI engineering", time_limit_days=30)
         for mode in ("sequential", "parallel"):

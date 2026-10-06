@@ -5,7 +5,8 @@ from datetime import date, datetime, timezone
 from unittest.mock import patch
 
 from src.adapters import build_available_adapters
-from src.models import InputRequest, ResolvedSearchConfiguration, ScoutQuery, SourceQuery, SourceRecord
+from src.models import (CandidateIdea, InputRequest, ResolvedSearchConfiguration,
+                        ScoutQuery, SourceQuery, SourceRecord)
 from src.models.source_record import RetrievalStatus
 from src.orchestration.coordinator import Orchestrator
 from src.workers.library_worker import LibraryWorker
@@ -53,6 +54,43 @@ class Generator:
 
 
 class SourcePolicyRuntimeTests(unittest.IsolatedAsyncioTestCase):
+    async def test_scout_result_preserves_correction_and_shortfall_metrics(self):
+        class MetricsGenerator:
+            async def generate_with_metrics(self, request, sources):
+                candidate = CandidateIdea(
+                    candidate_id="candidate-01", title="Evidence map",
+                    problem_statement="Students need to locate current evidence.",
+                    target_users=["Students"], proposed_outcome="An evidence map",
+                    why_it_matters="Supports research planning.",
+                )
+                return [candidate], {
+                    "generated_candidate_count": 1,
+                    "invalid_response_batches": 1,
+                    "duplicate_candidates": 2,
+                    "unsupported_candidates": 1,
+                    "correction_attempts": 1,
+                    "correction_succeeded": 0,
+                }
+
+        search = ResolvedSearchConfiguration(
+            domain="AI engineering", providers=[{"provider_id": "fixture",
+                "source_types": ["web_article"], "content_types": ["metadata"]}],
+            content_types=["metadata"], max_queries=1, max_results_per_query=3, max_sources=3,
+        )
+        result = await ScoutWorker(
+            {"fixture": Adapter()}, Planner(ScoutQuery), MetricsGenerator()
+        ).run(InputRequest(domain="AI engineering", time_limit_days=30), search)
+
+        self.assertEqual(result.generated_candidate_count, 1)
+        self.assertEqual(result.invalid_response_batch_count, 1)
+        self.assertEqual(result.duplicate_candidate_count, 2)
+        self.assertEqual(result.unsupported_candidate_count, 1)
+        self.assertEqual(result.correction_attempt_count, 1)
+        self.assertFalse(result.correction_succeeded)
+        self.assertEqual(set(result.reason_codes), {
+            "invalid_output", "duplicate_candidates", "unsupported_evidence", "underproduction",
+        })
+
     async def test_repeated_queries_deduplicate_but_changed_content_is_rejected(self):
         class RepeatedPlanner(Planner):
             async def plan(self, request, search):

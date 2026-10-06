@@ -11,6 +11,13 @@ from .input_request import InputRequest, SkillLevel
 from .library_result import LibraryResult
 from .orchestration_result import OrchestrationResult, RankedCandidate, RetrievalIndexInfo
 from .proposal_draft import ProposalDraft
+from .reevaluation import (
+    AdditionalProposalRecord,
+    CriticReevaluationRequest,
+    CriticReevaluationRecord,
+    ReevaluationRankedCandidate,
+    evaluation_configuration_sha256,
+)
 from .prompt_interpretation import (
     EvaluationSuggestions,
     InterpretationIssue,
@@ -38,6 +45,7 @@ from .run_budget import (
     RunBudgetUsage,
     resolve_budget_limits,
 )
+from .run_diagnostics import CountShortfall, RunDiagnostics
 from .search_defaults import SearchDefaults, SearchLimits, SearchPreset
 from .retrieved_chunk import RetrievedChunk
 from .scout_query import ScoutQuery, SourceQuery
@@ -55,12 +63,15 @@ from .usage_record import UsageRecord
 
 __all__ = [
     "AlternativeApproach",
+    "AdditionalProposalRecord",
     "BudgetPolicy",
     "BudgetSelection",
     "CandidateAssessment",
     "CandidateIdea",
     "CandidateReviewDecision",
     "CriticResult",
+    "CriticReevaluationRequest",
+    "CriticReevaluationRecord",
     "CriterionDefinition",
     "CriterionJudgment",
     "CriterionScore",
@@ -89,8 +100,11 @@ __all__ = [
     "ResolvedProvider",
     "ResolvedSearchConfiguration",
     "RankedCandidate",
+    "ReevaluationRankedCandidate",
     "RunBudgetLimits",
     "RunBudgetUsage",
+    "RunDiagnostics",
+    "CountShortfall",
     "SearchDefaults",
     "SearchConfiguration",
     "SearchLimits",
@@ -113,5 +127,6 @@ __all__ = [
     "UsageRecord",
     "ValueOrigin",
     "effective_configuration_checksum",
+    "evaluation_configuration_sha256",
     "resolve_budget_limits",
 ]

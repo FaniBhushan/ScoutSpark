@@ -10,6 +10,11 @@ from streamlit.testing.v1 import AppTest
 APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
 
 
+def button(app, label):
+    """Find controls by their visible label so saved-run entries do not shift tests."""
+    return next(item for item in app.button if item.label == label)
+
+
 class StreamlitUITests(unittest.TestCase):
     def test_sensitive_generated_output_is_not_rendered_or_downloadable(self):
         def show_sensitive_result():
@@ -30,20 +35,61 @@ class StreamlitUITests(unittest.TestCase):
         with (patch.dict("os.environ", {"OPENAI_API_KEY": "offline-test"}),
               patch("src.ui.app.OpenAITextClient", return_value=client)):
             app = AppTest.from_file(str(APP)).run(timeout=30)
+            self.assertTrue(any(item.label == "Tips for useful results and cost control"
+                                for item in app.expander))
             app.radio[0].set_value("Live sources").run(timeout=30)
             app.text_input(key="model_id").set_value("offline-test").run(timeout=30)
             app.text_area(key="request_prompt").set_value("x" * 4001).run(timeout=30)
             self.assertIn(LONG_INPUT_WARNING, [item.value for item in app.warning])
-            self.assertFalse(app.button[0].disabled)
-            app.button[0].click().run(timeout=30)
+            self.assertFalse(button(app, "Draft fields from prompt").disabled)
+            button(app, "Draft fields from prompt").click().run(timeout=30)
             self.assertEqual(len(app.exception), 0)
             self.assertEqual(len(client.calls), 1)
             self.assertIn("x" * 4001, client.calls[0][0])
-            interests = next(item for item in app.text_input if item.label.startswith("Interests"))
+            interests = next(item for item in app.text_input if item.label == "Interest area (optional)")
             interests.set_value("x" * 201).run(timeout=30)
-            app.button[1].click().run(timeout=30)
-            self.assertTrue(app.button[2].disabled)
-            self.assertTrue(any("200" in item.value for item in app.error))
+            button(app, "Preview and validate configuration").click().run(timeout=30)
+            self.assertTrue(button(app, "Start research").disabled)
+            self.assertTrue(any("too_long" in item.value for item in app.error))
+
+    def test_multiple_interest_areas_fail_preview_before_research(self):
+        app = AppTest.from_file(str(APP)).run(timeout=30)
+        next(item for item in app.text_input if item.label == "Interest area (optional)") \
+            .set_value("robotics, accessibility").run(timeout=30)
+        button(app, "Preview and validate configuration").click().run(timeout=30)
+        self.assertTrue(any("one interest area per run" in item.value for item in app.error))
+        self.assertTrue(button(app, "Start research").disabled)
+        self.assertIsNone(app.session_state["result"])
+
+    def test_result_page_exposes_reviewed_critic_reevaluation_controls(self):
+        import asyncio
+        from src.adapters import FrozenFixtureAdapter
+        from src.application.service import run_research
+        from src.models import InputRequest
+        from tests.test_application import FakeLLMClient
+        from streamlit.testing.v1 import AppTest
+
+        result = asyncio.run(run_research(
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         desired_candidate_count=1, finalist_count=1),
+            FakeLLMClient(),
+            {"frozen_fixture": FrozenFixtureAdapter("ai_engineering_capstone_01")},
+        ))
+        def show_result_page():
+            import streamlit as st
+            from src.ui.views import _result_view
+            from tests.test_application import FakeLLMClient
+            _result_view(st.session_state.result, action_client_factory=FakeLLMClient)
+
+        app = AppTest.from_function(show_result_page)
+        app.session_state["result"] = result
+        app = app.run(timeout=30)
+        self.assertEqual(len(app.exception), 0)
+        self.assertTrue(any(item.label == "Re-evaluate candidates with reviewed criteria and project gates"
+                            for item in app.expander))
+        button(app, "Edit re-evaluation criteria").click().run(timeout=30)
+        self.assertTrue(any(item.label == "Preview resolved re-evaluation"
+                            for item in app.button))
 
     def test_secret_input_blocks_drafting_without_echoing_secret(self):
         from tests.test_guardrails import SECRET
@@ -53,7 +99,7 @@ class StreamlitUITests(unittest.TestCase):
             app.radio[0].set_value("Live sources").run(timeout=30)
             app.text_input(key="model_id").set_value("offline-test").run(timeout=30)
             app.text_area(key="request_prompt").set_value(SECRET).run(timeout=30)
-            self.assertTrue(app.button[0].disabled)
+            self.assertTrue(button(app, "Draft fields from prompt").disabled)
             self.assertTrue(any("credential" in item.value for item in app.error))
             self.assertFalse(any(SECRET in item.value for item in app.error))
 
@@ -77,7 +123,7 @@ class StreamlitUITests(unittest.TestCase):
             app.radio[0].set_value("Live sources").run(timeout=30)
             app.text_input(key="model_id").set_value("offline-test").run(timeout=30)
             app.text_area(key="request_prompt").set_value("AI engineering project").run(timeout=30)
-            app.button[0].click().run(timeout=30)
+            button(app, "Draft fields from prompt").click().run(timeout=30)
             errors = [item.value for item in app.error]
             self.assertTrue(any("No search has started" in value for value in errors))
             self.assertFalse(any("expected value at line" in value for value in errors))
@@ -86,18 +132,18 @@ class StreamlitUITests(unittest.TestCase):
         app = AppTest.from_file(str(APP)).run(timeout=30)
         self.assertEqual(len(app.exception), 0)
         self.assertIsNone(app.session_state["result"])
-        self.assertTrue(app.button[2].disabled)
+        self.assertTrue(button(app, "Start research").disabled)
 
-        app.button[1].click().run(timeout=30)
+        button(app, "Preview and validate configuration").click().run(timeout=30)
         self.assertEqual(len(app.error), 0)
-        self.assertFalse(app.button[2].disabled)
+        self.assertFalse(button(app, "Start research").disabled)
         self.assertIsNone(app.session_state["result"])
 
         app.number_input[0].set_value(31).run(timeout=30)
-        self.assertTrue(app.button[2].disabled)
-        app.button[1].click().run(timeout=30)
-        self.assertFalse(app.button[2].disabled)
-        app.button[2].click().run(timeout=30)
+        self.assertTrue(button(app, "Start research").disabled)
+        button(app, "Preview and validate configuration").click().run(timeout=30)
+        self.assertFalse(button(app, "Start research").disabled)
+        button(app, "Start research").click().run(timeout=30)
 
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(len(app.error), 0)
@@ -134,9 +180,10 @@ class StreamlitUITests(unittest.TestCase):
                              if widget.label == "Use custom weights").value)
         problem = next(widget for widget in app.number_input if widget.label == "Problem value")
         problem.set_value(20).run(timeout=30)
-        app.button[1].click().run(timeout=30)
-        self.assertTrue(app.button[2].disabled)
-        self.assertTrue(any("total 100" in error.value for error in app.error))
+        button(app, "Preview and validate configuration").click().run(timeout=30)
+        self.assertTrue(button(app, "Start research").disabled)
+        self.assertTrue(app.error)
+        self.assertEqual(app.session_state["preview"], None)
         self.assertIsNone(app.session_state["result"])
 
     def test_upload_terms_are_required_and_new_files_reset_agreement(self):
@@ -149,21 +196,21 @@ class StreamlitUITests(unittest.TestCase):
         self.assertFalse(agreement.value)
         self.assertIn("not verify a license", " ".join(item.value for item in app.info))
 
-        app.button[1].click().run(timeout=30)
+        button(app, "Preview and validate configuration").click().run(timeout=30)
         self.assertTrue(any("Agree to the upload terms" in item.value for item in app.error))
         agreement = next(item for item in app.checkbox
                          if item.label == "I agree to the upload terms")
         agreement.set_value(True).run(timeout=30)
         self.assertEqual(app.session_state["ui_values"]["search.uploads"][0]["filename"],
                          "notes.txt")
-        app.button[1].click().run(timeout=30)
+        button(app, "Preview and validate configuration").click().run(timeout=30)
         self.assertEqual(len(app.error), 0)
         self.assertIsNotNone(app.session_state["preview"])
         app.file_uploader[0].upload("other.txt", b"Different synthetic notes",
                                     mime_type="text/plain").run(timeout=30)
         self.assertFalse(next(item for item in app.checkbox
                               if item.label == "I agree to the upload terms").value)
-        self.assertTrue(app.button[2].disabled)
+        self.assertTrue(button(app, "Start research").disabled)
 
 
 if __name__ == "__main__":

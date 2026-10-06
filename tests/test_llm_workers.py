@@ -395,11 +395,12 @@ class LLMWorkerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             [event["event"] for event in events],
-            ["start", "usage", "response_retry", "usage", "error"],
+            ["start", "usage", "schema_validation_failed", "response_retry", "usage",
+             "schema_validation_failed", "error"],
         )
         self.assertEqual(events[1]["completion_tokens"], 3)
         self.assertNotIn("estimated_cost_usd", events[1])
-        self.assertEqual(events[3]["completion_tokens"], 3)
+        self.assertEqual(events[4]["completion_tokens"], 3)
 
     async def test_incomplete_response_records_reported_usage(self) -> None:
         class IncompleteClient:

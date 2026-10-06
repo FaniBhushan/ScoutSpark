@@ -25,6 +25,7 @@ async def recover_source_coverage(
     stage: str,
     tracer: RunTracer | None = None,
     quarantined: set[str] | None = None,
+    metrics: dict[str, int] | None = None,
 ) -> tuple[list[SourceRecord], list[str]]:
     """Try each approved provider at most once, without another planning call.
 
@@ -38,6 +39,8 @@ async def recover_source_coverage(
     counts = Counter(source.source_type for source in kept)
     warnings = []
     used = planned_queries
+    counters = metrics if metrics is not None else {}
+    counters.setdefault("recovery_queries", 0)
     for provider in search.providers:
         if provider.provider_id not in adapters:
             continue
@@ -65,6 +68,7 @@ async def recover_source_coverage(
         with (tracer.span("coverage_search", provider_id=provider.provider_id, query_id=query.query_id)
               if tracer else nullcontext()):
             try:
+                counters["recovery_queries"] += 1
                 results = await adapters[provider.provider_id].search(query)
             except (ProviderCallBudgetExceeded, SourceAdapterError) as error:
                 if not may_skip_provider_failure(provider.provider_id, kinds, search):
@@ -82,8 +86,10 @@ async def recover_source_coverage(
                 used += 1
                 continue
         used += 1
+        if len(results) > query.max_results:
+            raise ValueError(f"adapter {query.provider_id!r} exceeded the recovery result limit")
         warnings.append(f"{stage.capitalize()} used a remaining query to recover source coverage.")
-        for source in results[:query.max_results]:
+        for source in results:
             if source.provider != query.provider_id or source.query_id != query.query_id:
                 raise ValueError("adapter returned a source for the wrong provider or query")
             if source.source_type not in kinds:

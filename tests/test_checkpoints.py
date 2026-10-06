@@ -49,8 +49,21 @@ class CheckpointTests(unittest.IsolatedAsyncioTestCase):
                                                   checkpoint_dir=directory, resume=True)
             self.assertEqual(result.run_id, state["run_id"])
             self.assertEqual(resumed.calls, [1000, 3000, 4000, 2000])
-            self.assertEqual(result.budget_usage.model_tokens, 3600)
+            self.assertEqual(result.budget_usage.model_tokens, 4200)
             self.assertGreater(result.budget_usage.reserved_model_tokens, 0)
+            control = await run_prepared_research(
+                self.prepared, InterruptingClient(), self.adapters
+            )
+            self.assertEqual(result.scout, control.scout)
+            self.assertEqual(result.library, control.library)
+            self.assertEqual(
+                [(item.candidate_id, item.criteria, item.hard_gates,
+                  item.gate_passed, item.total_score) for item in result.critic.evaluations],
+                [(item.candidate_id, item.criteria, item.hard_gates,
+                  item.gate_passed, item.total_score) for item in control.critic.evaluations],
+            )
+            self.assertEqual(result.final_proposals, control.final_proposals)
+            self.assertEqual(result.diagnostics, control.diagnostics)
             replay_client = InterruptingClient()
             replay = await run_prepared_research(self.prepared, replay_client, self.adapters,
                 checkpoint_dir=directory, resume=True, frozen=True)

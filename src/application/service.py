@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from src.adapters.base import SourceAdapter
 from src.runtime.budgets import BudgetExceeded, BudgetedLLMClient, BudgetedSourceAdapter, RunBudget
 from src.application.finalization import ProposalCoverageError, finalize_proposals
+from src.application.diagnostics import build_run_diagnostics
 from src.guardrails import check_privacy, emit_advisories, input_advisories
 from src.llm import (
     LLMCandidateGenerator,
@@ -304,6 +305,7 @@ async def _execute_prepared_research(
             count=len(finalized.final_proposals),
         )
     data = finalized.model_dump(mode="python")
+    data["diagnostics"] = build_run_diagnostics(finalized, request, search).model_dump(mode="python")
     _redact_uploaded_text(data, prepared)
     data["prepared_run"] = prepared.model_dump(mode="python")
     data["budget_usage"] = budget.snapshot()

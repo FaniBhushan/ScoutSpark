@@ -12,6 +12,12 @@ same evidence to every system variant.
 - `validation/` contains fixture/dataset validation.
 - `guardrails/claim_support_eval.py` evaluates Critic/verifier behavior against
   the synthetic claim-support cases stored alongside it.
+- `scout_quality/` prepares blinded human review sheets and summarizes Scout
+  count, shortfall, structure, citation-reference, and independent quality checks.
+- `worker_quality/` prepares blind Library, Critic, and proposal review sheets;
+  records held-out mechanical audits and a Library provider-failure replay;
+  and scores completed independent human or reference labels separately from
+  worker/verifier verdicts.
 - `cases/development/` contains visible cases used while building the system.
 - `cases/held_out/` contains cases reserved for final regression checks.
 - `guardrails/claim_support.json` is the synthetic Critic development set;
@@ -93,6 +99,35 @@ Scout and Library concurrently, and `--output NEW_DIRECTORY` to choose a report
 directory. The default is an ignored directory under `evals/reports/`.
 Exit code 1 means at least one case failed, errored, or was skipped. Errors stop
 the remaining suite. Checks without relevant outputs are marked not evaluated.
+
+### Repeated-run reliability evaluation
+
+`evals/reliability/thresholds.json` preregisters the sample minimum and pass thresholds.
+The runner defaults to ten repetitions of the first development case, using the same
+request, frozen source and passage snapshot, prompt files, and resolved configuration:
+
+```sh
+python -m evals.reliability --offline-demo
+```
+
+Select a fixed case with `--case CASE_ID`, add cases by repeating that option, and set
+`--repeats N` or `--mode parallel` as needed. It reports valid completion, Scout candidate
+count attainment, finalist count attainment, citations, evidence audits, score/rank checks,
+score deviation for matching candidates, shortfall accuracy, set overlap, rank correlation,
+sample size, variance, and stage failures.
+Reports include request/source hashes, prompt hashes, and effective configuration hashes.
+The preregistered minimum is required before a release pass can be reported. Frozen sources
+isolate pipeline and model behavior; live-search variability is excluded by design and must
+be measured separately. Offline demo results are synthetic harness checks, not live model
+quality or production reliability evidence.
+
+Paid repeated runs are opt-in and require a shared suite cost cap and supplied price rates:
+
+```sh
+python -m evals.reliability --model gpt-4o-mini --max-cost-usd 1 --input-rate 0.15 --output-rate 0.60
+```
+
+This invokes a model and can incur charges. SDK retries are disabled.
 
 Paid execution is explicit, with one budget shared across every case:
 

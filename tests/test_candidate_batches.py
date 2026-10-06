@@ -4,7 +4,7 @@ import json
 import unittest
 from datetime import datetime, timezone
 
-from src.runtime.budgets import BudgetExceeded
+from src.runtime.budgets import BudgetExceeded, StageAllowanceExceeded
 from src.llm.client import ModelReply, ModelResponseError, ModelTransportError
 from src.llm.scout_llm import LLMCandidateGenerator
 from src.models import InputRequest, SourceRecord
@@ -19,12 +19,12 @@ def idea(label):
 
 class BatchClient:
     def __init__(self, responses):
-        self.responses = iter(responses)
+        self.responses = list(responses)
         self.calls = []
 
     async def complete(self, prompt, *, max_output_tokens):
         self.calls.append((prompt, max_output_tokens))
-        response = next(self.responses)
+        response = self.responses[min(len(self.calls) - 1, len(self.responses) - 1)]
         if isinstance(response, Exception):
             raise response
         return ModelReply(text=json.dumps(response), model="offline-test",
@@ -56,24 +56,43 @@ class CandidateBatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(all(limit == 3000 for _, limit in client.calls))
         self.assertNotIn("evidence", plans[1]["existing_ideas"][0])
 
-    async def test_later_truncated_batch_retains_previous_candidates(self):
+    async def test_later_truncated_batch_corrects_once_and_retains_previous_candidates(self):
         error = ModelResponseError("incomplete", reply=ModelReply(text="[", model="offline-test"))
-        client = BatchClient([[idea("Weather alerts"), idea("Harvest queues"), idea("Disease images")], error])
+        client = BatchClient([
+            [idea("Weather alerts"), idea("Harvest queues"), idea("Disease images")],
+            error,
+            error,
+        ])
         result = await self.generate(client)
         self.assertEqual(len(result), 3)
-        self.assertEqual(len(client.calls), 2)
+        self.assertEqual(len(client.calls), 3)
 
     async def test_initial_truncation_gets_one_smaller_attempt(self):
         error = ModelResponseError("incomplete", reply=ModelReply(text="[", model="offline-test"))
-        client = BatchClient([error, [idea("Weather alerts")]])
+        # The correction attempt is deliberately smaller, then the normal
+        # bounded batch loop fills the remaining two ideas.
+        client = BatchClient([
+            error,
+            [idea("Weather alerts")],
+            [idea("Harvest queues")],
+            [idea("Disease images")],
+        ])
         result = await self.generate(client, count=3)
-        self.assertEqual(len(result), 1)
+        self.assertEqual([item.title for item in result],
+                         ["Weather alerts", "Harvest queues", "Disease images"])
         self.assertEqual([prompt_json(p, "Batch instructions:\n")["requested_count"]
-                          for p, _ in client.calls], [3, 1])
-        repeated = BatchClient([error, error])
-        with self.assertRaises(ModelResponseError):
-            await self.generate(repeated, count=3)
+                          for p, _ in client.calls], [3, 1, 1, 1])
+        repeated = BatchClient([error, error, error])
+        partial, metrics = await LLMCandidateGenerator(
+            repeated, max_output_tokens=3000
+        ).generate_with_metrics(
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         desired_candidate_count=3, finalist_count=3), [self.source]
+        )
+        self.assertEqual(partial, [])
         self.assertEqual(len(repeated.calls), 2)
+        self.assertEqual(metrics["correction_attempts"], 1)
+        self.assertEqual(metrics["correction_succeeded"], 0)
 
     async def test_no_progress_stops_and_bad_references_are_discarded(self):
         wrong = idea("Missing source")
@@ -83,12 +102,68 @@ class CandidateBatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([item.title for item in result], ["Weather alerts"])
         self.assertEqual(len(client.calls), 2)
 
+    async def test_no_progress_feedback_retries_only_to_configured_batch_limit(self):
+        unsupported = idea("Unsupported idea")
+        unsupported["evidence"] = [{"source_id": "missing-source"}]
+        client = BatchClient([
+            [unsupported], [unsupported], [unsupported],
+        ])
+        generator = LLMCandidateGenerator(client, max_output_tokens=3000, max_batches=3)
+        result, metrics = await generator.generate_with_metrics(
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         desired_candidate_count=8, finalist_count=2), [self.source]
+        )
+        self.assertEqual(len(result), 0)
+        self.assertEqual(metrics["batch_count"], 3)
+        self.assertEqual(len(client.calls), 3)
+        later = prompt_json(client.calls[1][0], "Batch instructions:\n")
+        self.assertEqual(later["recovery_feedback"]["remaining_count"], 8)
+        self.assertEqual(later["recovery_feedback"]["unsupported_ideas_rejected"], 1)
+        after_duplicate = prompt_json(client.calls[2][0], "Batch instructions:\n")
+        self.assertEqual(after_duplicate["recovery_feedback"]["unsupported_ideas_rejected"], 2)
+
     async def test_budget_and_unknown_transport_usage_still_propagate(self):
         for error in (BudgetExceeded("limit"), ModelTransportError("connection")):
             with self.subTest(error=type(error).__name__):
                 client = BatchClient([[idea("Weather alerts")], error])
                 with self.assertRaises(type(error)):
                     await self.generate(client)
+
+    async def test_budget_exhaustion_during_correction_returns_measured_partial(self):
+        invalid = ModelResponseError(
+            "incomplete", reply=ModelReply(text="[", model="offline-test")
+        )
+        client = BatchClient([invalid, StageAllowanceExceeded("token allowance")])
+        result, metrics = await LLMCandidateGenerator(
+            client, max_output_tokens=3000
+        ).generate_with_metrics(
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         desired_candidate_count=3, finalist_count=3), [self.source]
+        )
+        self.assertEqual(result, [])
+        self.assertEqual(metrics["correction_attempts"], 1)
+        self.assertEqual(metrics["generated_candidate_count"], 0)
+        self.assertEqual(len(client.calls), 2)
+
+    async def test_schema_correction_uses_safe_hints_not_rejected_text(self):
+        marker = "REJECTED_RAW_MODEL_TEXT"
+        client = BatchClient([
+            {"title": marker},
+            ModelResponseError(
+                "incomplete", reply=ModelReply(text="[", model="offline-test")
+            ),
+        ])
+        _, metrics = await LLMCandidateGenerator(
+            client, max_output_tokens=3000
+        ).generate_with_metrics(
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         desired_candidate_count=3, finalist_count=3), [self.source]
+        )
+        correction_prompt = client.calls[1][0]
+        self.assertIn("response_schema_issues", correction_prompt)
+        self.assertNotIn(marker, correction_prompt)
+        self.assertEqual(metrics["correction_attempts"], 1)
+        self.assertEqual(metrics["correction_succeeded"], 0)
 
     async def test_synthetic_ideas_remain_internal_and_can_guide_later_batches(self):
         synthetic = idea("Synthetic exploration")

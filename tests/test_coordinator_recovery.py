@@ -32,6 +32,13 @@ def evaluation(candidate_id: str) -> EvaluationResult:
 
 
 class CoordinatorRecoveryTests(unittest.TestCase):
+    def test_equal_scores_are_ranked_by_candidate_id(self):
+        result = Orchestrator._rank(
+            [candidate("candidate-02"), candidate("candidate-01")],
+            CriticResult(evaluations=[evaluation("candidate-02"), evaluation("candidate-01")]),
+        )
+        self.assertEqual([item.candidate_id for item in result], ["candidate-01", "candidate-02"])
+
     def test_explicitly_skipped_candidate_is_omitted_from_ranking(self):
         result = Orchestrator._rank(
             [candidate("candidate-01"), candidate("candidate-02")],

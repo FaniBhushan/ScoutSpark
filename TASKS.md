@@ -1,7 +1,9 @@
 # ScoutSpark task tracker
 
-This file tracks current demo readiness and the improvements that remain after
-submission. Detailed implementation history and measurements are linked below.
+This file tracks current demo readiness and MVP progress. The forward-looking
+requirements and prioritized work are in
+[cross-domain-multi-agent-capstone-orchestrator-v2.md](cross-domain-multi-agent-capstone-orchestrator-v2.md).
+Detailed implementation history and measurements are linked below.
 
 ## Demo submission — 27 September 2026
 
@@ -44,9 +46,49 @@ is needed to complete the listed human-review task.
   [orchestration](docs/orchestration.md), [candidate scoring](docs/candidate_scoring.md),
   and the [decision log](docs/decision_log.md).
 
+## Current MVP reliability implementation
+
+V2-01 through V2-05 and V2-10 through V2-13, V2-18 through V2-20 are implemented
+with focused offline coverage. V2-01 enforces
+the single-area boundary at Pydantic request validation, GUI preview, CLI
+configuration, and prepared-run revalidation before providers execute. V2-02 adds
+preregistered thresholds and a repeatable frozen-source reliability runner. Its
+10-run offline report is `evals/reports/reliability-v2-02-final/summary.md`: it
+reports perfect repeatability for most checks but fails candidate-count attainment
+(1 returned against 5 requested). This is a synthetic harness result, not a live
+reliability claim. The full test suite passes (261 tests), and evaluation fixtures
+validate successfully. V2-06 has two
+held-out offline runs and blind review sheets prepared, but its candidate-level
+human ratings are still pending; see
+`evals/scout_quality/heldout_v2_2026-10-05.md`.
+
+V2-06–V2-09 now have current held-out offline runs, mechanical audits, blind
+review sheets, and independent scoring commands. Library also has an injected
+provider-failure replay; Critic has a matched sequential/parallel consistency
+comparison. Their human/reference quality ratings remain pending, so these
+four evaluation tasks are not marked complete. See
+`evals/worker_quality/heldout_v2_2026-10-05.md`.
+
+V2-10–V2-13 add bounded Scout over-generation and correction, Library evidence
+coverage recovery and accounting, and configured-count Critic scorecards.
+V2-18–V2-19 add previewed, versioned Critic re-evaluation and user-selected
+non-finalist proposals in the GUI and CLI. V2-20 adds result-quality and cost
+guidance in the UI and [help docs](docs/getting-useful-results.md). V2-14–V2-17
+remain pending.
+
+### Completed in this implementation
+
+- [x] V2-10 — Scout over-generates to `ceil(1.5 × requested count)`.
+- [x] V2-11 — Scout corrects measured candidate shortfalls within bounded batches.
+- [x] V2-12 — Library retries evidence collection for missing coverage within shared limits.
+- [x] V2-13 — Critic shows the configured number of scored results when available.
+- [x] V2-18 — GUI and CLI support versioned Critic re-evaluation.
+- [x] V2-19 — GUI and CLI can request a verified non-finalist proposal.
+- [x] V2-20 — UI and help docs include practical result and cost guidance.
+
 ## Further improvements
 
-- [ ] Add concise, practical “getting the best results” guidance to the UI or
+- [x] Add concise, practical “getting the best results” guidance to the UI or
       help docs. Suggest focused requests (for example, one interest area per
       run, with a clear problem and constraints) and explain cost controls such
       as selecting only relevant sources, using a simpler search preset, and
@@ -72,7 +114,7 @@ is needed to complete the listed human-review task.
 - [ ] Make recovery-first behavior consistent across interpretation, planning,
       adapters, workers, orchestration, and UI. Cover optional failures,
       adapter over-returns, UI resume, and cross-stage fault recovery.
-- [ ] Add a bounded Scout response-correction loop for schema-invalid model
+- [x] Add a bounded Scout response-correction loop for schema-invalid model
       output. The current smaller-batch retry can receive safe field/type hints;
       extend this into one explicit correction attempt, keep any valid candidates
       already produced, and report a useful partial result if correction still

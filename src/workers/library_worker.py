@@ -9,7 +9,7 @@ from typing import Protocol
 
 from src.adapters.base import SourceAdapter
 from src.models import InputRequest, LibraryResult, ResolvedSearchConfiguration, SourceQuery
-from src.models.source_record import SourceRecord
+from src.models.source_record import RetrievalStatus, SourceRecord
 from src.observability import RunTracer
 from src.adapters.http_json import SourceAdapterError
 from src.runtime.budgets import ProviderCallBudgetExceeded
@@ -62,6 +62,7 @@ class LibraryWorker:
             self.tracer.budget("library", "search_queries", len(queries), search.max_queries)
 
         sources: list[SourceRecord] = []
+        reason_codes = []
         seen: dict[str, SourceRecord] = {}
         quarantined: set[str] = set()
         type_counts: Counter[str] = Counter()
@@ -98,6 +99,8 @@ class LibraryWorker:
                     f"Library skipped {query.provider_id} search ({type(error).__name__}); "
                     "continuing with other available sources."
                 )
+                if "provider_unavailable" not in reason_codes:
+                    reason_codes.append("provider_unavailable")
                 if self.tracer:
                     self.tracer.event(
                         "library", "optional_provider_skipped",
@@ -145,19 +148,49 @@ class LibraryWorker:
             if self.tracer:
                 self.tracer.budget("library", "source_records", len(sources), search.max_sources)
 
+        recovery_metrics: dict[str, int] = {}
         sources, recovery_warnings = await recover_source_coverage(
             request, search, sources, self.adapters, planned_queries=len(queries),
             stage="library", tracer=self.tracer,
             quarantined=quarantined,
+            metrics=recovery_metrics,
         )
         warnings.extend(recovery_warnings)
         chunks = build_source_chunks(sources)
+        usable_count = sum(source.retrieval_status in (
+            RetrievalStatus.SUCCESS, RetrievalStatus.PARTIAL
+        ) for source in sources)
+        usable_types = {source.source_type for source in sources if source.retrieval_status in (
+            RetrievalStatus.SUCCESS, RetrievalStatus.PARTIAL
+        )}
+        required_types = sorted(set(search.required_source_types) | set(request.source_policy.required_types))
+        missing_types = sorted(set(required_types) - usable_types)
+        coverage_gaps = []
+        if usable_count < search.minimum_source_count:
+            coverage_gaps.append(
+                f"usable sources {usable_count}/{search.minimum_source_count}"
+            )
+        if missing_types:
+            coverage_gaps.append("required source types missing: " + ", ".join(missing_types))
+        if coverage_gaps:
+            warnings.append("Library coverage remains incomplete after bounded recovery: "
+                            + "; ".join(coverage_gaps) + ".")
+            if "source_unavailable" not in reason_codes:
+                reason_codes.append("source_unavailable")
         warnings = list(warnings)
         if not chunks:
             warnings.append("No usable source snippets were found for candidate evaluation.")
+            reason_codes.append("source_unavailable")
         if self.tracer:
             self.tracer.event("library", "chunks_ready", count=len(chunks))
-        return LibraryResult(sources=sources, chunks=chunks, warnings=warnings)
+        return LibraryResult(
+            sources=sources, chunks=chunks, warnings=warnings,
+            reason_codes=list(dict.fromkeys(reason_codes)),
+            requested_usable_source_count=search.minimum_source_count,
+            usable_source_count=usable_count,
+            missing_required_source_types=missing_types,
+            recovery_query_count=recovery_metrics.get("recovery_queries", 0),
+        )
 
     def _validate_queries(
         self, queries: list[SourceQuery], search: ResolvedSearchConfiguration

@@ -9,6 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.ui.cli import main
+from src.ui.cli import _submitted_input
 from src.testing.demo import OfflineDemoClient
 from src.llm.client import ModelReply
 from src.models import (
@@ -37,6 +38,26 @@ class DraftOnlyClient:
 
 
 class CLIConfigurationTests(unittest.TestCase):
+    def test_cli_config_rejects_multiple_interest_areas_during_model_validation(self):
+        class Args:
+            config = None
+            case = None
+            fixture_set = None
+            live = False
+            request = None
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "configuration.json"
+            path.write_text(json.dumps({"request": {
+                "domain": "AI engineering", "time_limit_days": 30,
+                "interests": ["robotics", "accessibility"],
+            }}), encoding="utf-8")
+            Args.config = path
+            with self.assertRaises(Exception) as caught:
+                _submitted_input(Args(), None)
+        from src.guardrails import safe_error_message
+        self.assertIn("one interest area per run", safe_error_message(caught.exception))
+
     def test_large_prompt_warns_on_stderr_and_preserves_json_stdout(self):
         client = DraftOnlyClient()
         output, errors = StringIO(), StringIO()
@@ -188,7 +209,7 @@ class CLIConfigurationTests(unittest.TestCase):
         result = json.loads(output.getvalue())
         self.assertEqual(result["prepared_run"]["submitted"]["original_prompt"], draft.original_prompt)
         self.assertEqual(result["prepared_run"]["field_origins"]["request.domain"], "deduced")
-        self.assertEqual(len(client.calls), 6)
+        self.assertEqual(len(client.calls), 7)
 
 
 if __name__ == "__main__":

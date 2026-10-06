@@ -42,11 +42,44 @@ def _comma_change(path: str, key: str) -> None:
     st.session_state.ui_explicit.add(path)
 
 
+def _interest_change(path: str, key: str) -> None:
+    """Retain comma-separated entries so preflight can reject multiple areas clearly."""
+
+    st.session_state.ui_values[path] = [
+        part.strip() for part in st.session_state[key].split(",") if part.strip()
+    ]
+    st.session_state.ui_explicit.add(path)
+
+
 def _text_list(path: str, label: str) -> None:
     key = f"text:{path}"
     if key not in st.session_state:
         st.session_state[key] = ", ".join(st.session_state.ui_values.get(path, []))
     st.text_input(label, key=key, on_change=_comma_change, args=(path, key))
+
+
+def _interest_area_control() -> None:
+    path = "request.interests"
+    key = f"text:{path}"
+    if key not in st.session_state:
+        st.session_state[key] = ", ".join(st.session_state.ui_values.get(path, []))
+    st.text_input(
+        "Interest area (optional)", key=key, on_change=_interest_change,
+        args=(path, key),
+        help="Use one interest area per run. Run again to explore another area.",
+    )
+
+
+def _getting_useful_results_tips() -> None:
+    """Offer concise request and cost suggestions without promising outcomes."""
+    with st.expander("Tips for useful results and cost control", expanded=False):
+        st.markdown(
+            "- Describe one focused problem, who has it, and what a small useful outcome looks like.\n"
+            "- Add your deadline, team skills, available tools or data, and excluded topics.\n"
+            "- Select only relevant source types and use a simpler search preset when broad coverage is unnecessary.\n"
+            "- Preview the configuration before starting a live search; tighten the time, token, and cost limits if needed.\n\n"
+            "These are suggestions. They do not guarantee result quality or total cost."
+        )
 
 
 def _domain_control(domains: list[str]) -> None:
@@ -74,11 +107,12 @@ def _domain_control(domains: list[str]) -> None:
 
 
 def _simple_controls(catalog) -> None:
+    _getting_useful_results_tips()
     request_col, research_col = st.columns(2)
     with request_col:
         _domain_control(catalog.domains)
         _field("request.time_limit_days", 30, st.number_input, "Time available (days)", min_value=1)
-        _text_list("request.interests", "Interests or subdomain (comma separated)")
+        _interest_area_control()
     with research_col:
         search_preset = _field(
             "search.preset", "balanced", st.selectbox, "Search preset",
@@ -106,6 +140,7 @@ def _simple_controls(catalog) -> None:
 
 
 def _advanced_controls(catalog) -> None:
+    _getting_useful_results_tips()
     provider_col, policy_col = st.columns(2)
     with provider_col:
         _field("search.provider_ids", [], st.multiselect, "Ready providers (empty = automatic)",

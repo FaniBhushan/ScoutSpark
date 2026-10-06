@@ -49,6 +49,7 @@ async def finalize_proposals(
     *,
     allow_provisional_narrative: bool = False,
     tracer=None,
+    selected_candidate_ids: list[str] | None = None,
 ) -> OrchestrationResult:
     """Fill finalist slots in rank order while preserving earlier successful work.
 
@@ -67,12 +68,22 @@ async def finalize_proposals(
     proposals = list(result.final_proposals)
     warnings = list(result.warnings)
     failures = dict(result.proposal_failures)
+    failure_codes = dict(result.proposal_failure_codes)
     budget_exhausted = result.budget_exhausted
     retained_ids = {proposal.candidate_id for proposal in proposals}
-    eligible = sorted((row for row in result.ranking if row.gate_passed),
-                      key=lambda row: (row.rank, row.candidate_id))
+    eligible_by_id = {row.candidate_id: row for row in result.ranking if row.gate_passed}
+    if selected_candidate_ids is None:
+        eligible = sorted(eligible_by_id.values(), key=lambda row: (row.rank, row.candidate_id))
+        proposal_target = request.finalist_count
+    else:
+        if len(selected_candidate_ids) != len(set(selected_candidate_ids)):
+            raise ValueError("selected proposal candidates must be unique")
+        if any(candidate_id not in eligible_by_id for candidate_id in selected_candidate_ids):
+            raise ValueError("selected proposal candidates must have passing gates")
+        eligible = [eligible_by_id[candidate_id] for candidate_id in selected_candidate_ids]
+        proposal_target = len(selected_candidate_ids)
     for row in eligible:
-        if len(proposals) >= request.finalist_count:
+        if len(proposals) >= proposal_target:
             break
         candidate_id = row.candidate_id
         if candidate_id in retained_ids or candidate_id in failures:
@@ -103,6 +114,7 @@ async def finalize_proposals(
         chunk_ids = {reference.chunk_id for reference in references if reference.chunk_id}
         if not chunk_ids:
             failures[candidate_id] = "no cited Library chunks"
+            failure_codes[candidate_id] = "source_unavailable"
             warnings.append(f"Candidate {candidate_id} has no cited Library chunks for a proposal.")
             continue
         source_ids = {reference.source_id for reference in references}
@@ -160,10 +172,16 @@ async def finalize_proposals(
             # Keep sources and assessments even when the first draft cannot
             # finish. Do not spend a recovery call after a budget stop.
             budget_exhausted = True
+            failure_codes[candidate_id] = "budget_exhausted"
             warnings.append("Remaining proposal attempts stopped at the shared budget limit.")
             break
         except (ProposalVerificationError, ValidationError, ModelResponseError, ValueError) as error:
             failures[candidate_id] = safe_error_message(error)
+            failure_codes[candidate_id] = (
+                "verification_failure"
+                if verifier is not None and isinstance(error, ProposalVerificationError)
+                else "drafting_failure"
+            )
             warnings.append(f"Candidate {candidate_id} needs evidence review; its draft was withheld. "
                             + safe_error_message(error))
             if tracer:
@@ -208,6 +226,7 @@ async def finalize_proposals(
     data["finalist_candidate_ids"] = [proposal.candidate_id for proposal in proposals]
     data["warnings"] = warnings
     data["proposal_failures"] = failures
+    data["proposal_failure_codes"] = failure_codes
     data["budget_exhausted"] = budget_exhausted
     data["status"] = ("completed" if len(proposals) >= request.finalist_count
                       else "partial" if proposals else "insufficient_coverage")

@@ -21,11 +21,14 @@ class ReplacementClient(FakeLLMClient):
         data = json.loads(reply.text)
         if "idea-discovery worker" in prompt:
             feedback = prompt_json(prompt, "Batch instructions:\n").get("recovery_feedback")
-            if feedback:
-                assert feedback["previous_ideas"]
-                data[0].update(title="Source permission inspection",
-                               problem_statement="Students need to inspect documented data permissions.",
-                               proposed_outcome="A permission report for existing datasets")
+            if feedback and feedback.get("previous_ideas"):
+                assert "remaining_count" in feedback
+                title = ("Source permission inspection" if
+                         "Source permission inspection" not in feedback["previous_ideas"] else
+                         "Source permission audit alternative")
+                data[0].update(title=title,
+                               problem_statement=f"Students need to complete {title.lower()}.",
+                               proposed_outcome=f"A documented {title.lower()} for existing datasets")
         if "evidence-based candidate assessor" in prompt:
             candidate = prompt_json(prompt, "Candidate:\n")
             if not candidate["candidate_id"].startswith("recovery-"):
@@ -91,15 +94,15 @@ class ProposalRecoveryTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result.recovery_history)
         self.assertEqual(client.audits, {"candidate-01": 2, "candidate-02": 1})
 
-    async def test_replacements_pass_critic_and_resume_reuses_paid_work(self):
+    async def test_recovery_shortfall_is_reported_and_resume_reuses_paid_work(self):
         for mode in ("sequential", "parallel"):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
                 prepared = prepare_run(SubmittedRunConfiguration(request=self.request), self.adapters)
                 client = ReplacementClient()
                 result = await run_prepared_research(prepared, client, self.adapters,
                                                     mode=mode, checkpoint_dir=directory)
-                self.assertEqual(result.finalist_candidate_ids, ["recovery-01-1"])
-                self.assertEqual(result.recovery_history[0].outcome, "completed")
+                self.assertEqual(result.finalist_candidate_ids, [])
+                self.assertEqual(result.recovery_history[0].outcome, "exhausted")
                 self.assertFalse(result.recovery_history[0].previous_evaluations[0].gate_passed)
                 self.assertLessEqual(result.budget_usage.provider_calls["frozen_fixture"], 3)
                 resumed_client = ReplacementClient()

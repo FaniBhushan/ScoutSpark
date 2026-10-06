@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "ScoutSpark | High level architecture",
+    "locale": "en",
+    "output": ".archify/architecture-scoutspark-high-level-20261006-224420/scoutspark-high-level.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "git@github.com:FaniBhushan/SparkScout.git",
+      "revision": "3b7f558fe0a680dbf56a25323bfa9a10cc19c7b1",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {"id":"student","type":"external","label":"Student","sublabel":"capstone request","pos":[40,260],"size":[150,68],"sources":[{"path":"README.md","line":9,"end_line":14}]},
+    {"id":"interface","type":"frontend","label":"CLI / Streamlit","sublabel":"review settings; show results","pos":[285,260],"size":[168,68],"sources":[{"path":"src/ui/app.py","line":226,"end_line":249},{"path":"src/ui/cli.py","line":168,"end_line":179}]},
+    {"id":"preflight","type":"security","label":"Preflight","sublabel":"resolve and validate run","pos":[555,260],"size":[170,68],"sources":[{"path":"src/application/preflight.py","line":1,"end_line":16},{"path":"src/application/service.py","line":180,"end_line":198}]},
+    {"id":"research","type":"backend","label":"Research pipeline","sublabel":"Scout + Library + Critic","pos":[825,260],"size":[180,68],"sources":[{"path":"src/application/service.py","line":219,"end_line":243},{"path":"src/orchestration/coordinator.py","line":83,"end_line":88}]},
+    {"id":"finalization","type":"backend","label":"Finalization","sublabel":"rank, draft, verify","pos":[1110,260],"size":[165,68],"sources":[{"path":"src/orchestration/coordinator.py","line":221,"end_line":235},{"path":"src/application/finalization.py","line":44,"end_line":57}]},
+    {"id":"result","type":"frontend","label":"Results","sublabel":"scorecards + proposals","pos":[1380,260],"size":[170,68],"sources":[{"path":"src/ui/app.py","line":47,"end_line":59},{"path":"src/ui/app.py","line":326,"end_line":338}]},
+    {"id":"sources","type":"external","label":"Research sources","sublabel":"live, uploads, or fixtures","pos":[825,475],"size":[180,68],"sources":[{"path":"src/adapters/registry.py","line":17,"end_line":28},{"path":"src/adapters/registry.py","line":39,"end_line":65}]},
+    {"id":"model","type":"external","label":"Model client","sublabel":"live or offline demo","pos":[825,60],"size":[180,68],"sources":[{"path":"src/ui/app.py","line":309,"end_line":310},{"path":"src/application/service.py","line":206,"end_line":210}]}
+  ],
+  "connections": [
+    {"from":"student","to":"interface","label":"request"},
+    {"from":"interface","to":"preflight","label":"reviewed config"},
+    {"from":"preflight","to":"research","label":"prepared run"},
+    {"from":"research","to":"finalization","label":"scored ideas"},
+    {"from":"finalization","to":"result","label":"validated result"},
+    {"from":"sources","to":"research","label":"source records"},
+    {"from":"research","to":"model","label":"plan and judge"}
+  ],
+  "cards": [
+    {"dot":"cyan","title":"Research","items":["Scout proposes candidates; Library gathers independent evidence.","Critic retrieves Library passages before rubric assessment."]},
+    {"dot":"emerald","title":"Output policy","items":["Only gate-passing candidates are eligible for a detailed proposal.","Failed drafts are withheld; scorecards and warnings remain available."]}
+  ]
+}
