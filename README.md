@@ -80,10 +80,10 @@ run.
 It writes a detailed proposal only when its checks pass. You can also request an
 exploratory proposal, which is clearly marked as unverified.
 
-### System overview
+### ScoutSpark diagrams
 
-Click a preview to open the rendered Archify diagram. The HTML source is also
-available in the repository.
+Click each preview to open its interactive Archify page. The HTML source links
+open each of the three diagram files in the repository.
 
 [![High-level architecture: the main parts of ScoutSpark](docs/media/scoutspark-architecture-high-level-preview.png)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-high-level.html)
 
@@ -93,13 +93,10 @@ available in the repository.
 
 **Detailed run architecture** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html) · [HTML source](docs/media/scoutspark-architecture-low-level.html)
 
-Both diagrams are made with Archify. You can also read the
+**Research run flowchart** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-research-run-flowchart.html) · [HTML source](docs/media/scoutspark-research-run-flowchart.html)
+
+All three diagrams are made with Archify. You can also read the
 [plain-language guide to results](docs/getting-useful-results.md).
-
-### Research run flowchart
-
-Open the [interactive research run flowchart](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-research-run-flowchart.html)
-or view its [HTML source](docs/media/scoutspark-research-run-flowchart.html).
 
 ## What to expect
 
