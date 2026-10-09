@@ -96,6 +96,11 @@ available in the repository.
 Both diagrams are made with Archify. You can also read the
 [plain-language guide to results](docs/getting-useful-results.md).
 
+### Research run flowchart
+
+Open the [interactive research run flowchart](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-research-run-flowchart.html)
+or view its [HTML source](docs/media/scoutspark-research-run-flowchart.html).
+
 ## What to expect
 
 ScoutSpark is an early preview. It may show fewer ideas than requested, find
