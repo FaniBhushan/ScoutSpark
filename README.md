@@ -82,4 +82,4 @@ Do not include API keys, personal data, or private documents in public issues.
 - [How scoring and warnings work](docs/candidate_scoring.md)
 - [Source and privacy limits](docs/guardrails.md)
 - [Evaluation results](evals/README.md)
-- [Planned improvements](cross-domain-multi-agent-capstone-orchestrator-v2.md)
+- [Pending and future tasks](TASKS.md)

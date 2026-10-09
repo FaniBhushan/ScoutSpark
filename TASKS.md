@@ -1,9 +1,8 @@
 # ScoutSpark task tracker
 
-This file tracks current demo readiness and MVP progress. The forward-looking
-requirements and prioritized work are in
-[cross-domain-multi-agent-capstone-orchestrator-v2.md](cross-domain-multi-agent-capstone-orchestrator-v2.md).
-Detailed implementation history and measurements are linked below.
+This is the single source of truth for every pending and future task. The
+[V2 requirements](cross-domain-multi-agent-capstone-orchestrator-v2.md) retain
+product context and safeguards; dated reports retain evidence and measurements.
 
 ## V2 release milestone
 
@@ -18,10 +17,11 @@ A one-request Tavily live pilot found eight usable web articles but produced no
 verified proposal after Critic citation losses and failed gates. Both samples
 and their cost/limit details are in the [release check](docs/v2-release-check-2026-10-08.md).
 
-- [ ] Agree on result labels, hard-gate treatment, and preregistered first-run targets.
-- [ ] Complete independent Scout, Library, Critic, proposal, and verifier reviews.
-- [ ] Fix measured loss points and pass the repeated-run and limited live-source checks.
-- [ ] Fill in and publish the release note with actual results and limits.
+- Result labels, hard-gate treatment, and preregistered first-run targets — agree
+  before a release decision.
+- Measured loss points and repeat-run/live-source checks — resolve the identified
+  gaps and record the results before release.
+- Release note — complete with actual results and limits after review.
 
 ## Demo submission — 27 September 2026
 
@@ -37,14 +37,8 @@ and their cost/limit details are in the [release check](docs/v2-release-check-20
       proposal quality.
 - [x] Record controlled quantitative and blind LLM-judge results in
       `evals/demo_submission_2026-09-27.md`.
-- [ ] Independently human-score the three saved controlled proposals. Fill the
-      two review sheets below, then run the agreement analysis described in the
-      evaluation report. Do not infer human scores from the LLM judge.
-      - `evals/reports/2026-09-27-controlled-sequential/human_scores.csv`
-      - `evals/reports/2026-09-27-controlled-parallel/human_scores.csv`
-- [ ] Record the short demo using `docs/demo_recording_guide.md`. Label frozen
-      evidence and offline model responses as synthetic; present the measured
-      pipeline yield and small judge sample with their limitations.
+- Human review of controlled proposals and short demo recording are tracked as
+  V2-21 and V2-22 below.
 
 The matched paid runs returned 1/9 proposals sequentially and 2/9 in parallel.
 The blind LLM judge scored three proposals (n=3); human ratings are still
@@ -110,65 +104,105 @@ final proposal.
 - [x] Add user-requested exploratory proposals for displayed candidates without
       weakening automatic hard gates or verified-proposal rules.
 
-## Further improvements
+## Pending and future work
 
-- [x] Add concise, practical “getting the best results” guidance to the UI or
-      help docs. Suggest focused requests (for example, one interest area per
-      run, with a clear problem and constraints) and explain cost controls such
-      as selecting only relevant sources, using a simpler search preset, and
-      previewing the configuration before a live run. Present these as useful
-      tips, not guarantees of quality or cost.
-- [ ] Improve verified proposal yield across domains. Current runs do not prove
-      that every domain can produce a gate-passing, evidence-verified proposal.
-      Preserve explicit failure reasons; never invent evidence to fill a slot.
-- [ ] Add a user-triggered, bounded feedback round within the same run. Preserve
-      earlier results, ask before spending more of the shared budget, and score
-      alternatives with the same rubric and evidence rules.
-- [ ] Improve verifier accuracy with larger held-out and adversarial evaluations;
-      review false rejections and unsupported claims with human ratings.
-- [ ] Review the Critic evidence-and-assessment design. Trace how Scout ideas,
-      Library's run-scoped in-memory chunks, Critic context selection, and
-      source/chunk citations fit together. Compare safer ways to ground judgments
-      and validate citations; determine whether invalid or missing citations
-      should invalidate a whole assessment or instead be treated as unsupported
-      evidence while preserving a clearly caveated score. Evaluate whether a
-      bounded retrieve-more-and-reassess loop addresses actual retrieval gaps or
-      would only add cost without fixing citation mismatches. Record the design
-      decision and validate it on frozen cases before implementation.
-- [ ] Make recovery-first behavior consistent across interpretation, planning,
-      adapters, workers, orchestration, and UI. Cover optional failures,
-      adapter over-returns, UI resume, and cross-stage fault recovery.
-- [x] Add a bounded Scout response-correction loop for schema-invalid model
-      output. The current smaller-batch retry can receive safe field/type hints;
-      extend this into one explicit correction attempt, keep any valid candidates
-      already produced, and report a useful partial result if correction still
-      fails. Keep raw model output out of traces/UI, charge retries to the same
-      run budget, and stop after the configured attempt limit.
-- [ ] Evaluate a GitHub GraphQL adapter against the current REST repository
-      search. On identical queries, measure unique usable repositories,
-      request/point consumption, latency, response size, and rate-limit errors.
-      GraphQL has a separate point budget and may reduce calls through precise
-      field selection, but it does not bypass GitHub's primary or secondary
-      limits. Retain REST fallback and rate-limit-aware backoff.
-- [ ] Compare semantic embeddings with the lexical/TF-IDF baseline only if held-out
-      retrieval evaluation shows missed relevant evidence. Measure quality,
-      latency, and embedding cost before adopting a vector index.
-- [ ] Add budget-aware model routing that selects models by stage, task needs,
-      configured cost/quality preferences, and remaining run budget. Keep it
-      inspectable and allow fixed-model runs for reproducible comparisons.
-- [ ] Replace OpenAI-specific application wiring with pluggable LLM provider
-      adapters and configurable model IDs. Preserve structured-output validation,
-      retries, usage accounting, and shared budget enforcement across providers.
-- [ ] Design request-specific Critic criteria behind user review, versioned run
-      configuration, and consistency evaluation. Keep the current demo rubric
-      static; user-configured weights remain supported.
-- [ ] Modularize source code around clear responsibilities as the project grows;
-      keep package boundaries cohesive, avoid circular dependencies, and update
-      imports, tests, and docs with any future moves.
-- [ ] Apply maintainability best practices in future changes: add concise
-      docstrings for public APIs and comments only where they explain a non-obvious
-      invariant, fallback, or trade-off. Keep documentation accurate and avoid
-      comments that merely repeat the code.
+The task IDs and acceptance criteria below are canonical. Complete a task only
+when its evidence is recorded. These items are intentionally kept together;
+supporting reports may describe pending reviews but do not maintain separate
+task checklists.
+
+### Release readiness
+
+- Independent release reviews — complete the Scout, Library, Critic, proposal,
+  and verifier reviews with independent human/reference ratings, sample sizes,
+  and limitations recorded. V2-06–V2-09 cover the worker and proposal reviews;
+  V2-14 covers verifier accuracy.
+- Release checks — fix measured loss points and pass the repeat-run and limited
+  live-source checks before deciding to release.
+
+### Evaluation and reliability
+
+- **V2-06 — Scout:** Score held-out outputs for request/constraint fit, valid
+  structure, uniqueness/diversity, evidence support, and count/shortfall
+  accuracy. Complete the five-candidate human review and record its summary;
+  artifacts and blind review sheets are in `evals/scout_quality/`.
+- **V2-07 — Library:** Assess source relevance, required type/tier coverage,
+  metadata and citation integrity, deduplication, and gap reporting. Include
+  provider-failure cases, per-metric outcomes, and sample sizes; do not use
+  Library's own completion message as its sole quality score.
+- **V2-08 — Critic:** Measure score consistency, evidence relevance, gate
+  decisions, citation validity, and calibration against blinded human/reference
+  judgments. Report false acceptances/rejections and sample sizes; an LLM judge
+  is supplementary only.
+- **V2-09 — Proposal writing:** Blindly assess completeness, actionability,
+  factual support, explicit unknowns, and consistency with the selected idea and
+  verified evidence. Report human/reference review separately from verifier
+  outcomes, including sample size and unsupported-claim rates.
+- **V2-14 — Verifier accuracy:** Expand held-out and adversarial evaluation;
+  human-review false rejections and unsupported claims, including data/access
+  assumptions. Report false acceptance/rejection counts and adjudication using
+  an appropriate confusion analysis. Base any policy change on evidence and
+  continue to describe model verification as a safeguard.
+- **V2-15 — Critic evidence and citation policy:** Trace Scout claims through
+  Library chunks, Critic context/citations, drafting, and final audit. Compare
+  rejecting an assessment with preserving a caveated score for invalid/missing
+  citations. Test whether bounded retrieve-more-and-reassess fixes observed gaps
+  enough to justify its cost. Record the decision and frozen-case results for
+  citation integrity, unsupported claims, false rejection, cost, and both run
+  modes before implementation.
+- **V2-16 — Verified proposal yield:** Find loss points across discovery,
+  sources, assessment, gates, data suitability, drafting, citations, and
+  verification. Improve yield without weakening evidence, privacy, or user
+  constraints. Use a dated matched comparison and report stage counts, failure
+  reasons, latency, token use, and estimated cost; make no universal claim from
+  a small sample.
+- **V2-21 — Human review of controlled proposals:** Score the saved sequential
+  and parallel proposals using existing sheets and blind-review protocol.
+  Record sheets, supported agreement analysis, sample size, results, and
+  limitations in the evaluation report. Never present LLM-judge scores as human
+  scores. Sheets: `evals/reports/2026-09-27-controlled-sequential/human_scores.csv`
+  and `evals/reports/2026-09-27-controlled-parallel/human_scores.csv`.
+- **V2-22 — Short demo recording:** Follow `docs/demo_recording_guide.md`; show
+  the real workflow with the synthetic-data label visible. Save recording and
+  notes; present measured yield and sample sizes with limitations.
+
+### Future product and infrastructure work
+
+- **V2-17 — User-approved bounded feedback:** Show proposed extra work and
+  budget impact, then ask before spending. Preserve earlier results and assess
+  alternatives with the same evidence, rubric, and gates. Cover approve/decline,
+  exhaustion, duplicate alternatives, and preservation of prior results; a
+  declined round changes nothing.
+- **V2-23 — GitHub GraphQL evaluation:** Compare with REST on identical fixed
+  repository queries. Measure unique usable sources, request/point use, latency,
+  response size, and rate-limit/time-out failures. Record a reproducible
+  decision using current official guidance; retain REST fallback and rate-aware
+  backoff unless evidence supports a change. Keep credentials out of reports.
+- **V2-24 — Semantic retrieval evaluation:** Compare embeddings only if held-out
+  evaluation finds relevant evidence missed by the lexical/TF-IDF baseline.
+  Record retrieval quality, latency, token use, and embedding cost; adopt only
+  when measured gains justify cost and complexity.
+- **V2-25 — Request-specific Critic criteria:** Keep the demo rubric stable.
+  Design user-reviewed, versioned criteria and test consistency against the
+  fixed rubric. Before enabling, document schema, precedence, and held-out
+  results; weights must not weaken hard gates or citation rules.
+- **V2-26 — Cohesive module boundaries:** Refactor only for a concrete
+  maintenance need; avoid circular imports and broad rename/signature churn.
+  Record a narrow rationale, cover behavior, and update public imports/docs.
+- **V2-27 — Useful code comments and docs:** Add concise public API docstrings
+  and comments for non-obvious invariants, fallbacks, and trade-offs. Keep docs
+  accurate and avoid comments that only restate code.
+- **V2-28 — Budget-aware model router:** Choose models per stage from task needs,
+  configured quality/cost preferences, and remaining run budget. Keep choices
+  inspectable and offer fixed-model mode. Compare quality, latency, and cost
+  with a fixed-model baseline; never exceed user limits and record model and
+  rationale without sensitive prompt content.
+- **V2-29 — Pluggable LLM providers and models:** Replace OpenAI-specific
+  application wiring with a stable provider interface and configurable model
+  IDs while preserving structured validation, retries, usage accounting, and
+  budgets. Require at least two adapters to pass the same contract suite;
+  document provider differences, keep selection explicit, and keep secrets out
+  of logs and traces.
 
 Frozen fixtures are synthetic and live adapters may not provide every source
 type required by every case. See dated reports under `evals/` before making
