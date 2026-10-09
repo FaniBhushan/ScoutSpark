@@ -93,21 +93,9 @@ open each of the three diagram files in the repository.
 
 **Detailed run architecture** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html) · [HTML source](docs/media/scoutspark-architecture-low-level.html)
 
-**Research run flowchart** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-research-run-flowchart.html) · [HTML source](docs/media/scoutspark-research-run-flowchart.html)
+[![Research run flowchart: the steps from request to project ideas](docs/media/scoutspark-research-run-flowchart-preview.png)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-research-run-flowchart.html)
 
-```mermaid
-flowchart TD
-    A[Configure request] --> B[Review preview<br/>plan and limits]
-    B --> C[Start research]
-    C --> D[Scout proposes candidates]
-    C --> E[Library finds independent evidence]
-    D --> F[Validate join<br/>source and candidate IDs]
-    E --> F
-    F -->|Coverage met| G[Critic evaluates and ranks]
-    G -->|Gate-passing ideas| H[Draft and verify proposals]
-    H -->|Verified output| I[Show proposals]
-    F -->|Coverage below minimum| I
-```
+**Research run flowchart** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-research-run-flowchart.html) · [HTML source](docs/media/scoutspark-research-run-flowchart.html)
 
 All three diagrams are made with Archify. You can also read the
 [plain-language guide to results](docs/getting-useful-results.md).
