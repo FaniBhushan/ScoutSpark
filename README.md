@@ -17,12 +17,12 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/scoutspark-preview.mp4">
+  <a href="https://www.youtube.com/watch?v=IrdfptMuA7o">
     <img src="docs/media/scoutspark-video-thumbnail.jpg" alt="Watch the one-minute ScoutSpark walkthrough" width="800">
   </a>
 </p>
 
-<p align="center"><a href="docs/media/scoutspark-preview.mp4"><strong>▶ Watch the one-minute walkthrough</strong></a></p>
+<p align="center"><a href="https://www.youtube.com/watch?v=IrdfptMuA7o"><strong>▶ Watch the one-minute walkthrough on YouTube</strong></a></p>
 
 > **Limited preview · 9 October 2026**
 >
