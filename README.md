@@ -85,11 +85,11 @@ exploratory proposal, which is clearly marked as unverified.
 Click a preview to open the rendered Archify diagram. The HTML source is also
 available in the repository.
 
-[![High-level architecture: the main parts of ScoutSpark](docs/media/scoutspark-architecture-high-level.svg)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-high-level.html)
+[![High-level architecture: the main parts of ScoutSpark](docs/media/scoutspark-architecture-high-level-preview.png)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-high-level.html)
 
 **High-level architecture** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-high-level.html) · [HTML source](docs/media/scoutspark-architecture-high-level.html)
 
-[![Detailed run architecture: the steps behind a ScoutSpark result](docs/media/scoutspark-architecture-low-level.svg)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html)
+[![Detailed run architecture: the steps behind a ScoutSpark result](docs/media/scoutspark-architecture-low-level-preview.png)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html)
 
 **Detailed run architecture** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html) · [HTML source](docs/media/scoutspark-architecture-low-level.html)
 
