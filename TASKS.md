@@ -5,6 +5,24 @@ requirements and prioritized work are in
 [cross-domain-multi-agent-capstone-orchestrator-v2.md](cross-domain-multi-agent-capstone-orchestrator-v2.md).
 Detailed implementation history and measurements are linked below.
 
+## V2 release milestone
+
+The [limited preview note](docs/v2-limited-preview-2026-10-08.md) explains the
+current scope and gaps. The [8 October release check](docs/v2-release-check-2026-10-08.md)
+keeps the measured results and pending reviews together. Independent and broader
+evaluations follow the preview at the user's direction; the V2 release milestone
+remains open.
+One capped `gpt-4o-mini` frozen-source run accepted 18/12 requested robotics
+candidates, so the offline demo's 5/12 result did not reproduce with that model.
+A one-request Tavily live pilot found eight usable web articles but produced no
+verified proposal after Critic citation losses and failed gates. Both samples
+and their cost/limit details are in the [release check](docs/v2-release-check-2026-10-08.md).
+
+- [ ] Agree on result labels, hard-gate treatment, and preregistered first-run targets.
+- [ ] Complete independent Scout, Library, Critic, proposal, and verifier reviews.
+- [ ] Fix measured loss points and pass the repeated-run and limited live-source checks.
+- [ ] Fill in and publish the release note with actual results and limits.
+
 ## Demo submission — 27 September 2026
 
 - [x] Show five candidate ideas by default and two configurable score finalists.
@@ -75,6 +93,10 @@ V2-18–V2-19 add previewed, versioned Critic re-evaluation and user-selected
 non-finalist proposals in the GUI and CLI. V2-20 adds result-quality and cost
 guidance in the UI and [help docs](docs/getting-useful-results.md). V2-14–V2-17
 remain pending.
+The GUI and CLI also support an explicit, budgeted exploratory proposal for
+any displayed idea, including failed-gate and unscored ideas. It is saved as
+unverified with its original gate outcomes and never counted as a verified
+final proposal.
 
 ### Completed in this implementation
 
@@ -85,6 +107,8 @@ remain pending.
 - [x] V2-18 — GUI and CLI support versioned Critic re-evaluation.
 - [x] V2-19 — GUI and CLI can request a verified non-finalist proposal.
 - [x] V2-20 — UI and help docs include practical result and cost guidance.
+- [x] Add user-requested exploratory proposals for displayed candidates without
+      weakening automatic hard gates or verified-proposal rules.
 
 ## Further improvements
 
@@ -129,6 +153,12 @@ remain pending.
 - [ ] Compare semantic embeddings with the lexical/TF-IDF baseline only if held-out
       retrieval evaluation shows missed relevant evidence. Measure quality,
       latency, and embedding cost before adopting a vector index.
+- [ ] Add budget-aware model routing that selects models by stage, task needs,
+      configured cost/quality preferences, and remaining run budget. Keep it
+      inspectable and allow fixed-model runs for reproducible comparisons.
+- [ ] Replace OpenAI-specific application wiring with pluggable LLM provider
+      adapters and configurable model IDs. Preserve structured-output validation,
+      retries, usage accounting, and shared budget enforcement across providers.
 - [ ] Design request-specific Critic criteria behind user review, versioned run
       configuration, and consistency evaluation. Keep the current demo rubric
       static; user-configured weights remain supported.

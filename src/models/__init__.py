@@ -11,6 +11,7 @@ from .input_request import InputRequest, SkillLevel
 from .library_result import LibraryResult
 from .orchestration_result import OrchestrationResult, RankedCandidate, RetrievalIndexInfo
 from .proposal_draft import ProposalDraft
+from .user_proposal import ExploratoryProposalDraft, UserRequestedProposal
 from .reevaluation import (
     AdditionalProposalRecord,
     CriticReevaluationRequest,
@@ -88,6 +89,8 @@ __all__ = [
     "OrchestrationResult",
     "ProposalEvaluationPlan",
     "ProposalDraft",
+    "ExploratoryProposalDraft",
+    "UserRequestedProposal",
     "EvaluationSuggestions",
     "InterpretationIssue",
     "InterpretationReview",

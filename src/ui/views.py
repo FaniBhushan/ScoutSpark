@@ -9,6 +9,7 @@ import streamlit as st
 from src.guardrails import SensitiveContentError, check_privacy, safe_error_message
 from src.models import PromptInterpretationDraft
 from src.application.proposal_selection import generate_nonfinalist_proposal
+from src.application.user_proposal import generate_user_proposal, visible_candidate_ids
 from src.application.reevaluation import reevaluate_existing_candidates, resolve_reevaluation_configuration
 from src.models import CriticReevaluationRequest
 from src.runtime.failures import failure_details
@@ -104,10 +105,16 @@ def _result_view(result, *, action_client_factory=None) -> None:
                     }
                     for item in counts.shortfalls
                 ], hide_index=True)
-    render_scorecards(result)
+    render_scorecards(
+        result,
+        render_proposal_actions=(
+            lambda candidate_id, evaluation: _render_candidate_proposal_actions(
+                result, candidate_id, evaluation, action_client_factory,
+            )
+        ) if action_client_factory is not None else None,
+    )
     if action_client_factory is not None:
         _render_reevaluation_action(result, action_client_factory)
-        _render_nonfinalist_proposal_action(result, action_client_factory)
     result = candidate_review_view(result)
     with st.expander("Selected source receipts", expanded=False):
         st.dataframe([
@@ -200,54 +207,68 @@ def _render_reevaluation_action(result, client_factory) -> None:
                     st.error(safe_error_message(error))
 
 
-def _render_nonfinalist_proposal_action(result, client_factory) -> None:
-    """Offer an explicit, bounded action for gate-passing non-finalists in view."""
+def _render_candidate_proposal_actions(result, candidate_id, evaluation, client_factory) -> None:
+    """Render proposal actions next to the idea they will use."""
     if result.prepared_run is None:
         return
-    candidates = {item.candidate_id: item for attempt in result.recovery_history
-                  for item in attempt.previous_candidates}
-    candidates.update({item.candidate_id: item for item in result.scout.candidates})
-    evaluations = {item.candidate_id: item for item in result.score_evaluations}
-    top = set(result.score_finalist_candidate_ids)
-    visible_count = result.prepared_run.request.desired_candidate_count
-    visible_ids = {row.candidate_id for row in result.score_ranking[:visible_count]}
-    existing = {item.candidate_id for item in result.final_proposals}
-    existing.update(item.proposal.candidate_id for item in result.additional_proposals)
-    available = [candidate_id for candidate_id in visible_ids - top - existing
-                 if candidate_id in candidates and candidate_id in evaluations
-                 and evaluations[candidate_id].gate_passed]
-    if not available:
+    if not client_factory or candidate_id not in visible_candidate_ids(result):
         return
-    with st.expander("Generate a detailed proposal for another scored idea"):
-        labels = {candidate_id: candidates[candidate_id].title for candidate_id in available}
-        selected = st.selectbox(
-            "Gate-passing non-finalist", available,
-            format_func=lambda candidate_id: f"{labels[candidate_id]} ({candidate_id})",
-            key=f"extra-proposal-choice:{result.run_id}",
-        )
-        budget = result.prepared_run.budgets
-        usage = result.budget_usage
-        tokens_used = usage.model_tokens if usage else 0
-        tokens_remaining = max(0, budget.max_model_tokens - tokens_used)
-        cost_used = usage.estimated_cost_usd or 0.0 if usage else 0.0
-        cost_remaining = (max(0.0, budget.max_estimated_cost_usd - cost_used)
-                          if budget.max_estimated_cost_usd is not None else None)
-        st.caption(
-            f"This reuses collected sources and the selected idea's scored evidence. "
-            f"It may use remaining proposal-writing and verification calls; no new search runs. "
-            f"Remaining budget: {tokens_remaining} model tokens"
-            + (f", about ${cost_remaining:.4f} estimated cost" if cost_remaining is not None else "")
-            + "."
-        )
+    existing_user_proposals = {item.candidate.candidate_id for item in result.user_proposals}
+    proposals = {item.candidate_id for item in result.final_proposals}
+    proposals.update(item.proposal.candidate_id for item in result.additional_proposals)
+    has_exploratory = candidate_id in existing_user_proposals
+    is_finalist = candidate_id in result.score_finalist_candidate_ids
+    can_generate_detailed = (
+        not is_finalist and candidate_id not in proposals and evaluation is not None
+        and evaluation.gate_passed and bool(result.library.chunks)
+    )
+    if not can_generate_detailed and has_exploratory:
+        return
+
+    budget = result.prepared_run.budgets
+    usage = result.budget_usage
+    tokens_remaining = max(0, budget.max_model_tokens - (usage.model_tokens if usage else 0))
+    cost_used = (usage.estimated_cost_usd or 0.0) if usage else 0.0
+    cost_remaining = (max(0.0, budget.max_estimated_cost_usd - cost_used)
+                      if budget.max_estimated_cost_usd is not None else None)
+    st.caption(
+        "Proposal actions reuse saved evidence; they do not start new searches. "
+        f"Remaining budget: {tokens_remaining} model tokens"
+        + (f", about ${cost_remaining:.4f} estimated cost" if cost_remaining is not None else "")
+        + "."
+    )
+
+    if can_generate_detailed:
         approved = st.checkbox(
-            "I approve using this run's remaining budget for this proposal",
-            key=f"extra-proposal-approve:{result.run_id}:{selected}",
+            "Approve remaining run budget for a detailed proposal",
+            key=f"inline-detailed-approve:{result.run_id}:{candidate_id}",
         )
-        if st.button("Generate selected proposal", disabled=not approved,
-                     key=f"extra-proposal-run:{result.run_id}:{selected}"):
+        if st.button(
+            "Generate detailed proposal", disabled=not approved or tokens_remaining <= 0,
+            key=f"inline-detailed-run:{result.run_id}:{candidate_id}",
+        ):
             try:
                 updated = asyncio.run(generate_nonfinalist_proposal(
-                    result, selected, client_factory(),
+                    result, candidate_id, client_factory(),
+                ))
+                st.session_state.result = updated
+                save_run_result(updated)
+                st.rerun()
+            except Exception as error:
+                st.error(safe_error_message(error))
+
+    if not has_exploratory:
+        approved = st.checkbox(
+            "I approve spending remaining run budget on this unverified proposal",
+            key=f"inline-exploratory-approve:{result.run_id}:{candidate_id}",
+        )
+        if st.button(
+            "Generate exploratory proposal", disabled=not approved or tokens_remaining <= 0,
+            key=f"inline-exploratory-run:{result.run_id}:{candidate_id}",
+        ):
+            try:
+                updated = asyncio.run(generate_user_proposal(
+                    result, candidate_id, client_factory(),
                 ))
                 st.session_state.result = updated
                 save_run_result(updated)

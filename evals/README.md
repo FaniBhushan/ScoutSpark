@@ -112,8 +112,11 @@ python -m evals.reliability --offline-demo
 
 Select a fixed case with `--case CASE_ID`, add cases by repeating that option, and set
 `--repeats N` or `--mode parallel` as needed. It reports valid completion, Scout candidate
-count attainment, finalist count attainment, citations, evidence audits, score/rank checks,
-score deviation for matching candidates, shortfall accuracy, set overlap, rank correlation,
+count attainment, scored-idea count attainment, verified-proposal count attainment,
+per-run stage counts, missing-result reasons, time, model tokens, and estimated cost,
+plus citations, evidence audits, score/rank checks,
+score deviation for matching candidates, shortfall accuracy, Scout candidate-set overlap,
+rank correlation,
 sample size, variance, and stage failures.
 Reports include request/source hashes, prompt hashes, and effective configuration hashes.
 The preregistered minimum is required before a release pass can be reported. Frozen sources

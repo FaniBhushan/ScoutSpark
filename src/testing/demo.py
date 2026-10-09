@@ -67,12 +67,11 @@ class OfflineDemoClient:
                     for key in rubric["hard_gates"]
                 },
             }
-        elif "draft one implementable capstone proposal" in prompt:
+        elif ("draft one implementable capstone proposal" in prompt
+              or "draft one user-requested exploratory capstone proposal" in prompt):
             evidence = _prompt_json(prompt, "Evidence chunks:\n")
-            reference = {
-                "source_id": evidence[0]["source_id"],
-                "chunk_id": evidence[0]["chunk_id"],
-            }
+            reference = ({"source_id": evidence[0]["source_id"],
+                          "chunk_id": evidence[0]["chunk_id"]} if evidence else None)
             output = {
                 "gap_or_differentiation": "A synthetic demonstration; differentiation needs real research.",
                 "scoped_mvp": ["Build a small prototype", "Document one evaluation"],
@@ -96,7 +95,7 @@ class OfflineDemoClient:
                 "citations": [{
                     "claim": "The demo pipeline uses a captured fixture chunk.",
                     "references": [reference],
-                }],
+                }] if reference else [],
             }
         elif "independently verify factual support" in prompt:
             data = _prompt_json(prompt, "Checks:\n")

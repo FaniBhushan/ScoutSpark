@@ -99,6 +99,8 @@ these four status boxes remain open.
 |---|---|---|---|
 | [ ] | V2-26 | **Keep module boundaries cohesive.** Refactor only to address a concrete maintenance need. Avoid circular imports and broad rename/signature churn. | A narrow rationale is recorded, behavior is covered, public imports/docs are updated, and repository checks pass. |
 | [ ] | V2-27 | **Keep code comments and docs useful.** Add concise public API docstrings and comments for non-obvious invariants, fallbacks, and trade-offs. | Relevant documentation matches actual behavior, adds no unsupported claims, and avoids comments that merely repeat code. |
+| [ ] | V2-28 | **Add budget-aware model routing.** Choose a model per stage using task needs, configured quality/cost preferences, and the run's remaining budget. Keep routing decisions inspectable and allow fixed-model mode for reproducible comparisons. | Controlled evaluations compare quality, latency, and cost against a fixed-model baseline. Routing never exceeds user limits, records selected model and rationale without sensitive prompt content, and can be disabled or overridden. |
+| [ ] | V2-29 | **Support pluggable LLM providers and models.** Replace OpenAI-specific assumptions in application assembly with a stable provider interface and configurable model IDs, while preserving structured-output validation, retries, usage accounting, and budget enforcement. | At least two provider adapters pass the same contract suite for valid/invalid responses, errors, usage, and budget stops. Provider-specific differences are documented; provider selection is explicit and secrets stay out of logs and traces. |
 
 ## Safeguards for every task
 

@@ -29,14 +29,14 @@ def _fingerprint(candidate: dict) -> str:
     return hashlib.sha256(identity.encode()).hexdigest()
 
 
-def _decorate(record: dict, run_number: int) -> dict:
+def _decorate(record: dict, run_number: int, requested_candidates: int) -> dict:
     result = record.get("result") or {}
+    diagnostics = result.get("diagnostics") or {}
+    budget = result.get("budget_usage") or {}
     candidate_by_id = {row["candidate_id"]: _fingerprint(row)
                        for row in result.get("scout", {}).get("candidates", [])}
     record["repeat"] = run_number
-    record["candidate_fingerprints"] = sorted(
-        _fingerprint(row) for row in result.get("final_proposals", [])
-    )
+    record["candidate_fingerprints"] = sorted(candidate_by_id.values())
     record["ranked_fingerprints"] = [candidate_by_id[row["candidate_id"]]
                                      for row in result.get("ranking", [])
                                      if row["candidate_id"] in candidate_by_id]
@@ -47,6 +47,25 @@ def _decorate(record: dict, run_number: int) -> dict:
     }
     prepared = result.get("prepared_run") or {}
     record["configuration_sha256"] = prepared.get("configuration_checksum")
+    record["domain"] = (prepared.get("request") or {}).get("domain")
+    record["stage_counts"] = {
+        "requested": diagnostics.get("requested_candidate_count", requested_candidates),
+        "generated": diagnostics.get("generated_candidate_count", 0),
+        "accepted": diagnostics.get("accepted_candidate_count", 0),
+        "scored": diagnostics.get("assessed_candidate_count", 0),
+        "shown": len(result.get("ranking", [])),
+        "gate_passing": diagnostics.get("gate_passed_candidate_count", 0),
+        "verified_proposals": len(result.get("final_proposals", [])),
+    }
+    record["missing_result_reasons"] = [
+        {"stage": item.get("stage"), "reason_codes": item.get("reason_codes", [])}
+        for item in diagnostics.get("shortfalls", [])
+    ]
+    if record.get("failure_stage"):
+        record["missing_result_reasons"].append({"stage": record["failure_stage"],
+                                                 "reason_codes": [record["outcome"]]})
+    record["model_tokens"] = budget.get("model_tokens")
+    record["estimated_cost_usd"] = budget.get("estimated_cost_usd")
     return record
 
 
@@ -76,6 +95,24 @@ def _write(destination: Path, report: dict) -> None:
             deviation = "—" if result["population_stddev"] is None else f"{result['population_stddev']:.3f}"
             lines.append(f"| {name} | {mean} | {deviation} | {result['evaluated']} / "
                          f"{result['evaluated'] + result['not_evaluated']} | {threshold} |")
+    lines += ["", "## Per-run yield and usage", "",
+              "A zero count remains in the denominator. Cost is unavailable for offline runs.", "",
+              "| Case / domain | Repeat | Requested | Generated | Accepted | Scored | Shown | Gate passing | Verified proposals | Seconds | Model tokens | Estimated USD | Missing result reasons |",
+              "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |"]
+    for row in report["runs"]:
+        counts = row["stage_counts"]
+        reasons = "; ".join(
+            f"{reason['stage']}: {', '.join(reason['reason_codes']) or 'unspecified'}"
+            for reason in row["missing_result_reasons"]
+        ) or "—"
+        cost = row["estimated_cost_usd"]
+        lines.append("| " + " | ".join(str(value) for value in (
+            f"{row['case_id']} / {row['domain'] or 'unknown'}", row["repeat"],
+            *(counts[key] for key in ("requested", "generated", "accepted", "scored",
+                                       "shown", "gate_passing", "verified_proposals")),
+            row["duration_seconds"], row["model_tokens"] if row["model_tokens"] is not None else "—",
+            f"{cost:.4f}" if cost is not None else "—", reasons,
+        )) + " |")
     errors = [row for row in report["runs"] if row["outcome"] == "error"]
     lines += ["", "## Failures by stage", ""]
     if errors:
@@ -134,7 +171,8 @@ def main() -> int:
                 for case in cases:
                     [record] = await run_cases([(case, by_id[case.case_id])], run_client,
                                                mode=args.mode, pricing=pricing)
-                    record = _decorate(record, repeat)
+                    record = _decorate(record, repeat,
+                                       case.expected_request.desired_candidate_count)
                     records.append(record)
         finally:
             if args.model:

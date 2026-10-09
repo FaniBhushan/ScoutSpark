@@ -18,6 +18,7 @@ from .scout_result import ScoutResult
 from .source_record import SourceRecord
 from .candidate_review import CandidateReviewDecision, assessment_fingerprint
 from .candidate_idea import CandidateIdea
+from .user_proposal import UserRequestedProposal
 from .run_diagnostics import RunDiagnostics
 from .reevaluation import (
     AdditionalProposalRecord,
@@ -94,6 +95,7 @@ class OrchestrationResult(ContractModel):
     review_decisions: list[CandidateReviewDecision] = Field(default_factory=list)
     critic_reevaluations: list[CriticReevaluationRecord] = Field(default_factory=list)
     additional_proposals: list[AdditionalProposalRecord] = Field(default_factory=list)
+    user_proposals: list[UserRequestedProposal] = Field(default_factory=list)
     warnings: list[NonEmptyText] = Field(default_factory=list)
     completed_at: datetime
 
@@ -235,6 +237,27 @@ class OrchestrationResult(ContractModel):
             if additional.proposal.evidence_audit is not None and not additional.proposal.evidence_audit.accepted:
                 raise ValueError("additional proposal evidence audit must pass")
             _validate_proposal_citations(additional.proposal, source_ids, chunk_sources)
+        candidates = {item.candidate_id: item for attempt in self.recovery_history
+                      for item in attempt.previous_candidates}
+        candidates.update({item.candidate_id: item for item in self.scout.candidates})
+        retained_evaluations = [*self.critic.evaluations]
+        retained_evaluations.extend(item for attempt in self.recovery_history
+                                    for item in attempt.previous_evaluations)
+        retained_evaluations.extend(item for version in self.critic_reevaluations
+                                    for item in version.critic.evaluations)
+        seen_user_proposals = set()
+        for requested in self.user_proposals:
+            candidate_id = requested.candidate.candidate_id
+            if candidate_id in seen_user_proposals or candidates.get(candidate_id) != requested.candidate:
+                raise ValueError("exploratory proposal must refer to one retained candidate")
+            seen_user_proposals.add(candidate_id)
+            if requested.evaluation is not None and requested.evaluation not in retained_evaluations:
+                raise ValueError("exploratory proposal assessment is not retained")
+            for claim in requested.proposal.citations:
+                for reference in claim.references:
+                    if (reference.source_id not in source_ids or reference.chunk_id is None
+                            or chunk_sources.get(reference.chunk_id) != reference.source_id):
+                        raise ValueError("exploratory proposal cites an unknown or mismatched chunk")
         return self
 
 

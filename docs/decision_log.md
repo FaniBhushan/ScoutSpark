@@ -6,6 +6,32 @@ run data, dates, and caveats. Frozen evaluation sources are synthetic.
 
 ## Observed issues and decisions
 
+### User-requested proposals for failed-gate ideas — 8 October 2026
+
+The user requested an option to generate a proposal for any idea shown in the
+result, even when a hard gate failed. The implementation keeps the automatic
+`FinalProposal` contract unchanged and stores the user-directed draft in a
+separate `user_proposals` collection. The UI and CLI preview the failed gates
+and remaining budget before an explicit action. The draft is labeled
+`unverified`, may have no citations, and does not change gate outcomes, ranking,
+or verified-proposal counts. Citation IDs are still checked against the saved
+evidence. Failed-gate rationales are copied into the draft's unknowns. A
+user-directed draft is a plan to inspect, not an approval of known
+constraint conflicts or unsupported claims.
+
+### V2 release gate review — 8 October 2026
+
+The preview release check retains the five existing hard gates and the saved
+gate outcomes. The proposed three-label policy still needs an independent
+review of actual blocked, uncertain-evidence, and verified examples before any
+code change. The fresh frozen-source run missed its candidate-count target;
+its scorecards and proposals passed automated checks, but no independent person
+has judged their usefulness or factual support. See the
+[release check](v2-release-check-2026-10-08.md). No new success label is approved.
+The user deferred independent and broader evaluations until after a limited
+preview. The [preview note](v2-limited-preview-2026-10-08.md) names the missed
+target and unmeasured claims; the full V2 milestone remains open.
+
 ### Deadline finalist presentation — 27 September
 
 The user chose two displayed finalists by default, configurable counts, and

@@ -4,7 +4,8 @@
   "metrics": {
     "valid_result_completion_rate": {"minimum": 0.9},
     "candidate_count_target_rate": {"minimum": 0.9},
-    "finalist_count_target_rate": {"minimum": 0.8},
+    "scorecard_count_target_rate": {"minimum": 0.8},
+    "verified_proposal_count_target_rate": {"minimum": 0.8},
     "citation_integrity_rate": {"minimum": 0.99},
     "evidence_support_rate": {"minimum": 0.99},
     "score_consistency_rate": {"minimum": 0.99},

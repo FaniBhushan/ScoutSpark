@@ -5,7 +5,7 @@ import streamlit as st
 from .evaluation_guide import CRITERIA_HELP
 
 
-def render_scorecards(result) -> None:
+def render_scorecards(result, *, render_proposal_actions=None) -> None:
     """Expand the score finalists and retain every remaining idea for comparison."""
     selected = set(result.score_finalist_candidate_ids)
     candidates = {item.candidate_id: item for attempt in result.recovery_history
@@ -14,6 +14,7 @@ def render_scorecards(result) -> None:
     evaluations = {item.candidate_id: item for item in result.score_evaluations}
     proposals = {item.candidate_id: item for item in result.final_proposals}
     proposals.update({item.proposal.candidate_id: item.proposal for item in result.additional_proposals})
+    user_proposals = {item.candidate.candidate_id: item for item in result.user_proposals}
     ordered = result.score_ranking
     candidate_target = (result.prepared_run.request.desired_candidate_count if result.prepared_run
                         else len(result.scout.candidates))
@@ -89,6 +90,10 @@ def render_scorecards(result) -> None:
                         for reference in claim.references:
                             source = sources[reference.source_id]
                             st.caption(f"{source.title} · {source.canonical_url or source.source_id}")
+                if row.candidate_id in user_proposals:
+                    _render_user_proposal(user_proposals[row.candidate_id], result.source_manifest)
+                if render_proposal_actions is not None:
+                    render_proposal_actions(row.candidate_id, evaluation)
     unscored = [item for item in result.scout.candidates if item.candidate_id not in evaluations]
     if unscored:
         with st.expander("Ideas without a score", expanded=not bool(ordered)):
@@ -99,3 +104,40 @@ def render_scorecards(result) -> None:
                 st.text("Proposed outcome: " + candidate.proposed_outcome)
                 st.text("Target users: " + ", ".join(candidate.target_users))
                 st.caption("This idea could not be scored, so it is not ranked as a finalist.")
+                if candidate.candidate_id in user_proposals:
+                    _render_user_proposal(user_proposals[candidate.candidate_id],
+                                          result.source_manifest)
+                if render_proposal_actions is not None:
+                    render_proposal_actions(candidate.candidate_id, None)
+
+
+def _render_user_proposal(record, source_manifest) -> None:
+    """Keep a user-directed draft visually distinct from verified proposals."""
+    draft = record.proposal
+    st.warning("User-requested exploratory proposal — not gate approved or evidence verified.")
+    if record.failed_gate_ids:
+        st.caption("Failed gates remain: " + ", ".join(record.failed_gate_ids))
+    elif record.evaluation is None:
+        st.caption("This candidate has no Critic assessment or gate decision.")
+    st.markdown("**Scoped MVP**")
+    st.text("\n".join(draft.scoped_mvp))
+    st.markdown("**Technical approach**")
+    st.text(draft.technical_approach)
+    st.text("Required data: " + (", ".join(draft.required_data) or "None specified"))
+    st.text("Required tools: " + (", ".join(draft.required_tools) or "None specified"))
+    st.text("Access assumptions: " + (", ".join(draft.access_assumptions) or "None specified"))
+    st.text("Non-goals: " + "; ".join(draft.non_goals))
+    st.text("First feasibility check: " + draft.first_kill_test)
+    st.write("Evaluation plan:", draft.evaluation_plan.model_dump(mode="json"))
+    for risk in [*draft.risks, *draft.unknowns]:
+        st.warning(risk)
+    if draft.citations:
+        sources = {item.source_id: item for item in source_manifest}
+        st.caption("Citations are linked by ID only; their factual support was not verified.")
+        for claim in draft.citations:
+            st.text(claim.claim)
+            for reference in claim.references:
+                source = sources[reference.source_id]
+                st.caption(f"{source.title} · {source.canonical_url or source.source_id}")
+    else:
+        st.caption("No supportable citation was supplied for this exploratory draft.")

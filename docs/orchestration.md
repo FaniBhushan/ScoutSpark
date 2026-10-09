@@ -8,6 +8,18 @@ ascending for ties. If fewer than requested pass but at least one can proceed,
 the result is marked `partial` and available finalists are still drafted. If none
 pass, or minimum source coverage fails, the status is `insufficient_coverage`.
 Requested proposal counts are targets; gates are never relaxed to fill them.
+
+A user may separately request an **exploratory proposal** for any idea shown in
+the result, including a failed-gate or unscored idea. The action reuses saved
+evidence and the run's remaining model budget, requires explicit approval, and
+starts no new search. Its draft is stored in `user_proposals`, marked
+`unverified`, and keeps the candidate's original assessment and failed gates.
+Failed-gate rationales are also copied into the draft's unknowns so the saved
+plan carries those limits even when viewed apart from its scorecard.
+It does not add to `final_proposals`, change rank, waive gates, or count toward
+verified-proposal targets. The draft may have no citations when no supportable
+passage is available; any cited source/chunk IDs must still be valid. The user
+must check constraints, data access, and claims before acting on it.
 Evidence-only failures remain visible for explicit user review after the run.
 User choices are recorded separately and do not alter automatic ranking,
 finalists, or completion status; see [candidate review](candidate_scoring.md).

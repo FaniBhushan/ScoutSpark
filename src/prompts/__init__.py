@@ -17,6 +17,7 @@ from src.models import (
     CandidateIdea,
     PromptSuggestions,
     ProposalDraft,
+    ExploratoryProposalDraft,
     ScoutQuery,
     SourceQuery,
 )
@@ -28,6 +29,7 @@ PromptName = Literal[
     "library_query_planner",
     "critic_candidate_judge",
     "final_proposal",
+    "exploratory_proposal",
     "request_interpreter",
     "proposal_verifier",
 ]
@@ -38,6 +40,7 @@ _PROMPTS: dict[PromptName, tuple[str, TypeAdapter]] = {
     "library_query_planner": ("library_query_planner.md", TypeAdapter(list[SourceQuery])),
     "critic_candidate_judge": ("critic_candidate_judge.md", TypeAdapter(CandidateAssessment)),
     "final_proposal": ("final_proposal.md", TypeAdapter(ProposalDraft)),
+    "exploratory_proposal": ("exploratory_proposal.md", TypeAdapter(ExploratoryProposalDraft)),
     "request_interpreter": ("request_interpreter.md", TypeAdapter(PromptSuggestions)),
     "proposal_verifier": ("proposal_statement_verifier.md", TypeAdapter(StatementAudit)),
 }

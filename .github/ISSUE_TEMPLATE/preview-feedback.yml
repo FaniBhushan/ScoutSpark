@@ -1,0 +1,58 @@
+name: Preview feedback
+description: Share what worked, what was confusing, or what failed during a preview run.
+title: "Preview feedback: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying ScoutSpark. Please do not include API keys, private documents,
+        personal data, or other sensitive information. Results can be incomplete or
+        unverified; include only details you are comfortable sharing publicly.
+  - type: dropdown
+    id: feedback_type
+    attributes:
+      label: What kind of feedback is this?
+      options:
+        - Bug or error
+        - Confusing result or wording
+        - Useful idea or proposal
+        - Source or citation issue
+        - General suggestion
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: What result did you get?
+      options:
+        - A verified detailed proposal
+        - Scored ideas, but no verified proposal
+        - An exploratory unverified proposal
+        - Insufficient coverage or no useful sources
+        - I could not complete a run
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: request_summary
+    attributes:
+      label: What were you trying to explore?
+      description: Summarize the topic and constraints without sharing private details.
+      placeholder: A short, non-sensitive summary
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: What worked or did not work?
+      description: Describe what you expected, what happened, and any error text with secrets removed.
+      placeholder: Steps, outcome, and what you would change
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: What would make the experience more useful?
+      description: Optional suggestions for the app, results, sources, or proposal workflow.
+    validations:
+      required: false

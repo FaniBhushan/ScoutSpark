@@ -16,6 +16,57 @@ def button(app, label):
 
 
 class StreamlitUITests(unittest.TestCase):
+    def test_failed_gate_idea_can_request_a_labeled_exploratory_proposal(self):
+        import asyncio
+        from src.adapters import FrozenFixtureAdapter
+        from src.application.service import run_research
+        from src.models import InputRequest, OrchestrationResult
+        from tests.test_application import FakeLLMClient
+
+        result = asyncio.run(run_research(
+            InputRequest(domain="AI engineering", time_limit_days=30,
+                         desired_candidate_count=1, finalist_count=1),
+            FakeLLMClient(),
+            {"frozen_fixture": FrozenFixtureAdapter("ai_engineering_capstone_01")},
+        ))
+        evaluation = result.critic.evaluations[0]
+        failed_gate = evaluation.hard_gates[0].model_copy(update={
+            "passed": False, "rationale": "Required access is unresolved.",
+        })
+        failed_evaluation = evaluation.model_copy(update={
+            "hard_gates": [failed_gate, *evaluation.hard_gates[1:]],
+            "gate_passed": False, "rejection_reasons": ["Required access is unresolved."],
+        })
+        data = result.model_dump(mode="python")
+        data.update({"critic": result.critic.model_copy(update={"evaluations": [failed_evaluation]}),
+                     "ranking": [result.ranking[0].model_copy(update={"gate_passed": False})],
+                     "final_proposals": [], "finalist_candidate_ids": [],
+                     "status": "insufficient_coverage"})
+
+        def show_result_page():
+            import streamlit as st
+            from src.ui.views import _result_view
+            from tests.test_application import FakeLLMClient
+            _result_view(st.session_state.result, action_client_factory=FakeLLMClient)
+
+        app = AppTest.from_function(show_result_page)
+        app.session_state["result"] = OrchestrationResult.model_validate(data)
+        with patch("src.ui.views.save_run_result"):
+            app.run(timeout=30)
+            self.assertEqual(len(app.exception), 0)
+            self.assertTrue(button(app, "Generate exploratory proposal").disabled)
+            checkbox = next(item for item in app.checkbox
+                            if item.label.startswith("I approve spending remaining run budget"))
+            checkbox.set_value(True).run(timeout=30)
+            self.assertFalse(button(app, "Generate exploratory proposal").disabled)
+            button(app, "Generate exploratory proposal").click().run(timeout=30)
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(len(app.session_state.result.user_proposals), 1)
+        self.assertFalse(app.session_state.result.critic.evaluations[0].gate_passed)
+        self.assertEqual(app.session_state.result.final_proposals, [])
+        self.assertTrue(any("not gate approved or evidence verified" in item.value
+                            for item in app.warning))
+
     def test_sensitive_generated_output_is_not_rendered_or_downloadable(self):
         def show_sensitive_result():
             from src.ui.views import _result_view

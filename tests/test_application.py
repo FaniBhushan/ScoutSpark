@@ -72,12 +72,11 @@ class FakeLLMClient:
                     for key in rubric["hard_gates"]
                 },
             }
-        elif "draft one implementable capstone proposal" in prompt:
+        elif ("draft one implementable capstone proposal" in prompt
+              or "draft one user-requested exploratory capstone proposal" in prompt):
             evidence = prompt_json(prompt, "Evidence chunks:\n")
-            reference = {
-                "source_id": evidence[0]["source_id"],
-                "chunk_id": evidence[0]["chunk_id"],
-            }
+            reference = ({"source_id": evidence[0]["source_id"],
+                          "chunk_id": evidence[0]["chunk_id"]} if evidence else None)
             payload = {
                 "gap_or_differentiation": "Compare retrieval and answer quality separately.",
                 "scoped_mvp": ["Build one retrieval pipeline", "Measure answer quality"],
@@ -102,7 +101,7 @@ class FakeLLMClient:
                 "citations": [{
                     "claim": "A retrieval evaluation is feasible with the supplied evidence.",
                     "references": [reference],
-                }],
+                }] if reference else [],
             }
         elif "independently verify factual support" in prompt:
             data = prompt_json(prompt, "Checks:\n")

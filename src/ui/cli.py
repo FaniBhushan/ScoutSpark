@@ -32,6 +32,7 @@ from src.observability import RunTracer
 from src.application.preflight import prepare_run
 from src.application.reevaluation import reevaluate_existing_candidates, resolve_reevaluation_configuration
 from src.application.proposal_selection import generate_nonfinalist_proposal
+from src.application.user_proposal import generate_user_proposal, visible_candidate_ids
 from src.models import (
     CriticReevaluationRequest,
     OrchestrationResult,
@@ -77,6 +78,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="saved run JSON to re-score against its existing evidence")
     inputs.add_argument("--proposal-result", type=Path,
                         help="saved run JSON for a detailed non-finalist proposal")
+    inputs.add_argument("--exploratory-proposal-result", type=Path,
+                        help="saved run JSON for a user-requested unverified proposal")
     parser.add_argument("--review-file", type=Path, help="InterpretationReview JSON for --draft-file")
     parser.add_argument("--fixture-set", help="synthetic source fixture for request/config/prompt")
     parser.add_argument("--live", action="store_true", help="use credential-ready live adapters")
@@ -102,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-rate", type=float, help="trusted USD per million output tokens")
     parser.add_argument("--reevaluation-config", type=Path,
                         help="JSON with revised weights and additive project gates")
-    parser.add_argument("--candidate-id", help="candidate ID for --proposal-result")
+    parser.add_argument("--candidate-id", help="candidate ID for a saved-run proposal action")
     parser.add_argument("--preview-additional-work", action="store_true",
                         help="show resolved saved-run work and budget without model calls")
     parser.add_argument("--confirm-additional-work", action="store_true",
@@ -134,7 +137,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.input_rate is not None else None
     )
 
-    if args.reevaluate_result or args.proposal_result:
+    if args.reevaluate_result or args.proposal_result or args.exploratory_proposal_result:
         return _run_saved_result_action(args, parser, pricing)
 
     fixture_set = args.fixture_set
@@ -240,7 +243,7 @@ def _run_saved_result_action(args: argparse.Namespace, parser: argparse.Argument
             "resolved_configuration": configuration.model_dump(mode="json"),
             "configuration_sha256": evaluation_configuration_sha256(configuration),
         }
-    else:
+    elif args.proposal_result:
         if args.candidate_id is None or args.reevaluation_config is not None:
             parser.error("--proposal-result requires --candidate-id and no --reevaluation-config")
         result_path = args.proposal_result
@@ -262,6 +265,32 @@ def _run_saved_result_action(args: argparse.Namespace, parser: argparse.Argument
             "candidate_id": candidate.candidate_id, "title": candidate.title,
             "score": assessment.total_score, "gates_passed": assessment.gate_passed,
             "evidence_chunks_reused": len(result.library.chunks),
+        }
+    else:
+        if args.candidate_id is None or args.reevaluation_config is not None:
+            parser.error("--exploratory-proposal-result requires --candidate-id and no --reevaluation-config")
+        result = OrchestrationResult.model_validate_json(
+            args.exploratory_proposal_result.read_text(encoding="utf-8")
+        )
+        candidates = {item.candidate_id: item for attempt in result.recovery_history
+                      for item in attempt.previous_candidates}
+        candidates.update({item.candidate_id: item for item in result.scout.candidates})
+        candidate = candidates.get(args.candidate_id)
+        if candidate is None or args.candidate_id not in visible_candidate_ids(result):
+            parser.error("candidate ID is not visible in this saved run")
+        if any(item.candidate.candidate_id == args.candidate_id for item in result.user_proposals):
+            parser.error("this candidate already has a user-requested proposal")
+        assessment = next((item for item in result.score_evaluations
+                           if item.candidate_id == args.candidate_id), None)
+        action = {
+            "action": "exploratory_proposal", "run_id": result.run_id,
+            "candidate_id": candidate.candidate_id, "title": candidate.title,
+            "score": assessment.total_score if assessment else None,
+            "gates_passed": assessment.gate_passed if assessment else None,
+            "failed_gates": ([gate.gate_id for gate in assessment.hard_gates if not gate.passed]
+                             if assessment else []),
+            "verification_status": "unverified",
+            "evidence_chunks_available": len(result.library.chunks),
         }
     if result.prepared_run is None:
         parser.error("saved result has no resolved run budgets")
@@ -290,16 +319,18 @@ def _run_saved_result_action(args: argparse.Namespace, parser: argparse.Argument
         if budgets.max_estimated_cost_usd is not None and pricing is None:
             parser.error("this saved run has a cost cap; supply --input-rate and --output-rate")
         client = OpenAITextClient(args.model, pricing=pricing, max_retries=0)
-    try:
-        if args.reevaluate_result:
-            updated = asyncio.run(reevaluate_existing_candidates(result, client, changes))
-        else:
-            updated = asyncio.run(generate_nonfinalist_proposal(
-                result, args.candidate_id, client,
-            ))
-    finally:
-        if not args.offline_demo:
-            asyncio.run(client.sdk_client.close())
+    async def execute_saved_action():
+        try:
+            if args.reevaluate_result:
+                return await reevaluate_existing_candidates(result, client, changes)
+            if args.proposal_result:
+                return await generate_nonfinalist_proposal(result, args.candidate_id, client)
+            return await generate_user_proposal(result, args.candidate_id, client)
+        finally:
+            if not args.offline_demo:
+                await client.sdk_client.close()
+
+    updated = asyncio.run(execute_saved_action())
     serialized = updated.model_dump_json(indent=2)
     if args.result_output:
         args.result_output.write_text(serialized, encoding="utf-8")

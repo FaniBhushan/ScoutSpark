@@ -22,8 +22,9 @@ def _spearman(left: list[str], right: list[str]) -> float | None:
     common = set(left) & set(right)
     if len(common) < 2:
         return None
-    left_rank = {item: index for index, item in enumerate(left) if item in common}
-    right_rank = {item: index for index, item in enumerate(right) if item in common}
+    # Re-rank the shared subset; gaps from unmatched items would distort rho.
+    left_rank = {item: index for index, item in enumerate(item for item in left if item in common)}
+    right_rank = {item: index for index, item in enumerate(item for item in right if item in common)}
     n = len(common)
     # Each list has unique candidate fingerprints, so no tied ranks occur.
     d_squared = sum((left_rank[item] - right_rank[item]) ** 2 for item in common)
@@ -33,13 +34,16 @@ def _spearman(left: list[str], right: list[str]) -> float | None:
 def aggregate(records: list[dict], target: int, thresholds: dict,
               finalist_target: int | None = None) -> dict:
     """Calculate preregistered rates and candidate-set/rank stability."""
-    count_values, finalist_values, shortfall_values = [], [], []
+    count_values, scorecard_values, proposal_values, shortfall_values = [], [], [], []
     for row in records:
         result = row.get("result") or {}
         proposals = result.get("final_proposals", [])
         scout_count = len(result.get("scout", {}).get("candidates", []))
         count_values.append(float(scout_count >= target))
-        finalist_values.append(float(len(proposals) == (finalist_target or target)))
+        required_finalists = finalist_target or target
+        # A visible scorecard and a verified proposal are distinct outcomes.
+        scorecard_values.append(float(len(result.get("ranking", [])) >= required_finalists))
+        proposal_values.append(float(len(proposals) >= required_finalists))
         requested = row.get("proposal_counts", {}).get("requested", target)
         reported = row.get("proposal_counts", {}).get("target_met")
         shortfall_values.append(float(reported is (len(proposals) == requested)))
@@ -47,7 +51,8 @@ def aggregate(records: list[dict], target: int, thresholds: dict,
     metrics = {
         "valid_result_completion_rate": _rate([float(row.get("outcome") == "passed") for row in records]),
         "candidate_count_target_rate": _rate(count_values),
-        "finalist_count_target_rate": _rate(finalist_values),
+        "scorecard_count_target_rate": _rate(scorecard_values),
+        "verified_proposal_count_target_rate": _rate(proposal_values),
         "citation_integrity_rate": _rate([
             _check_value(row, "citation_integrity") for row in records
         ]),
