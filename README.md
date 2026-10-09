@@ -1,42 +1,47 @@
-# ScoutSpark
+<p align="center">
+  <img src="assets/brand/scoutspark-logo.svg" alt="ScoutSpark" width="326" height="64">
+</p>
 
-ScoutSpark helps students explore capstone project ideas that fit their interests,
-skills, time, and resources. It searches for supporting sources, compares ideas,
-and explains when the evidence is not strong enough for a detailed plan.
+<h1 align="center">Find a capstone idea you can actually build.</h1>
+
+<p align="center">
+  ScoutSpark helps students explore project ideas that fit their interests,
+  skills, time, and resources. It searches for supporting sources and shows
+  when the evidence is not strong enough for a detailed plan.
+</p>
+
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white"></a>
+  <img alt="Limited preview" src="https://img.shields.io/badge/status-limited%20preview-D9383E?style=flat-square">
+  <a href="https://github.com/FaniBhushan/SparkScout/issues/new/choose"><img alt="Share feedback" src="https://img.shields.io/badge/feedback-GitHub%20Issues-181717?style=flat-square&logo=github&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="docs/media/scoutspark-preview.mp4">
+    <img src="docs/media/scoutspark-video-thumbnail.jpg" alt="Watch the one-minute ScoutSpark walkthrough" width="800">
+  </a>
+</p>
+
+<p align="center"><a href="docs/media/scoutspark-preview.mp4"><strong>▶ Watch the one-minute walkthrough</strong></a></p>
 
 > **Limited preview · 9 October 2026**
-> Try it and [share feedback](https://github.com/FaniBhushan/SparkScout/issues/new/choose).
+>
 > Results can be incomplete or unverified. Check the sources and warnings before
-> relying on an idea. The full reliability review is still in progress; see the
-> [preview notes](docs/v2-limited-preview-2026-10-08.md).
+> relying on an idea. The full reliability review is still in progress. Read the
+> [preview notes](docs/v2-limited-preview-2026-10-08.md) for details.
 
-## See ScoutSpark
+## Why I built it
 
-**Short video walkthrough:** coming soon. The [recording guide](docs/demo_recording_guide.md)
-and [video script](docs/demo_video_script.md) show what the walkthrough will cover.
+When I was researching capstone projects, finding an idea that fit my criteria
+took a lot of manual work. I built a research agent to help with that search.
+The results were useful, so I turned it into a general tool for exploring
+capstone project ideas.
 
-## How it works
+## Try it on your computer
 
-![ScoutSpark architecture](docs/scoutspark_architecture.png)
-
-1. You describe what you want to build and your limits.
-2. **Scout** searches for problems and suggests project ideas.
-3. **Library** searches for more evidence about the topic.
-4. **Critic** compares each idea with the evidence and checks practical limits.
-5. ScoutSpark shows the scores, sources, and reasons an idea may not be ready.
-   It writes a detailed plan only when its checks pass. You can also ask for an
-   exploratory plan, which is clearly marked as unverified.
-
-See the [architecture image as SVG](docs/scoutspark_architecture.svg) or read the
-[plain-language guide to results](docs/getting-useful-results.md).
-
-## Run it on your computer
-
-You need Python 3.10 or newer. Each person running ScoutSpark uses their own
-model and search API keys. The **Offline demo** works without keys and uses
-synthetic examples; it does not search the live web.
-
-Clone the repository, install the packages, and start the app:
+You need Python 3.10 or newer. ScoutSpark runs locally, using your own model and
+search API keys. The **Offline demo** works without keys and uses made-up
+examples; it does not search the live web.
 
 ```sh
 git clone https://github.com/FaniBhushan/SparkScout.git
@@ -47,21 +52,49 @@ python -m pip install -r requirements.txt
 python -m streamlit run streamlit_app.py
 ```
 
-On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead of
-`source .venv/bin/activate`.
+On Windows PowerShell, activate the environment with
+`.venv\Scripts\Activate.ps1` instead of `source .venv/bin/activate`.
 
-When the app opens, choose **Offline demo** to try it without credentials. For
-live research, choose **Live sources** and provide your own `OPENAI_API_KEY` and
-`TAVILY_API_KEY`. A GitHub token is optional. You can put these values in a
-`.env` file in your local copy of the repository, in this format:
+When the app opens, choose **Offline demo** to explore without credentials. For
+live research, choose **Live sources** and provide your own `OPENAI_API_KEY`
+and `TAVILY_API_KEY`. A GitHub token is optional. You can put the keys in a
+`.env` file in your local copy of the repository:
 
 ```text
 OPENAI_API_KEY=your_openai_key
 TAVILY_API_KEY=your_tavily_key
 ```
 
-Never commit that file or post keys in feedback. Live model and search services
-may charge you. Review the budget controls before starting a run.
+Keep `.env` private. Never commit it or post keys in feedback. Live model and
+search services may charge you, so review the budget controls before starting a
+run.
+
+## How it works
+
+1. You describe what you want to build, along with your limits.
+2. **Scout** searches for problems and suggests project ideas.
+3. **Library** independently looks for more evidence.
+4. **Critic** compares each idea with the evidence and checks practical limits.
+5. ScoutSpark shows scores, sources, and reasons an idea may not be ready.
+
+It writes a detailed proposal only when its checks pass. You can also request an
+exploratory proposal, which is clearly marked as unverified.
+
+### System overview
+
+Click a preview to open the rendered Archify diagram. The HTML source is also
+available in the repository.
+
+[![High-level architecture: the main parts of ScoutSpark](docs/media/scoutspark-architecture-high-level.svg)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-high-level.html)
+
+**High-level architecture** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-high-level.html) · [HTML source](docs/media/scoutspark-architecture-high-level.html)
+
+[![Detailed run architecture: the steps behind a ScoutSpark result](docs/media/scoutspark-architecture-low-level.svg)](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html)
+
+**Detailed run architecture** · [Open interactive diagram](https://htmlpreview.github.io/?https://github.com/FaniBhushan/SparkScout/blob/main/docs/media/scoutspark-architecture-low-level.html) · [HTML source](docs/media/scoutspark-architecture-low-level.html)
+
+Both diagrams are made with Archify. You can also read the
+[plain-language guide to results](docs/getting-useful-results.md).
 
 ## What to expect
 
@@ -69,7 +102,7 @@ ScoutSpark is an early preview. It may show fewer ideas than requested, find
 sources that do not support a useful plan, or withhold a detailed proposal. In
 the saved preview checks, the offline run missed its requested candidate count
 in all ten repeats, and one live pilot returned no verified proposals. These
-checks are small and do not establish general quality. Read the
+checks are small and do not establish general quality. See the
 [release check and its limits](docs/v2-release-check-2026-10-08.md).
 
 Please share bugs, confusing results, source problems, and ideas for improvement

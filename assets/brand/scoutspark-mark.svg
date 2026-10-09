@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">ScoutSpark mark</title>
+  <rect width="64" height="64" rx="19" fill="#D9383E"/>
+  <circle cx="27" cy="27" r="16" fill="none" stroke="#FFFFFF" stroke-width="3.5"/>
+  <path d="M39 39 53 53" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <path d="m27 14 3.1 9.9L40 27l-9.9 3.1L27 40l-3.1-9.9L14 27l9.9-3.1L27 14Z" fill="#FFD36A"/>
+</svg>

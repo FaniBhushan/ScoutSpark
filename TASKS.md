@@ -203,6 +203,11 @@ task checklists.
   budgets. Require at least two adapters to pass the same contract suite;
   document provider differences, keep selection explicit, and keep secrets out
   of logs and traces.
+- **V2-30 — Streamlit UI redesign:** Improve the app's visual hierarchy,
+  spacing, typography, navigation, and result presentation so the research flow
+  feels clear and polished. Keep setup understandable for local users, preserve
+  the existing review and budget safeguards, and check the main screens at
+  desktop and narrow widths before considering the redesign complete.
 
 Frozen fixtures are synthetic and live adapters may not provide every source
 type required by every case. See dated reports under `evals/` before making
