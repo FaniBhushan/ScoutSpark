@@ -30,14 +30,14 @@
 > relying on an idea. The full reliability review is still in progress. Read the
 > [preview notes](docs/v2-limited-preview-2026-10-08.md) for details.
 
-## Why I built it
+## 💡 Why I built it
 
 When I was researching capstone projects, finding an idea that fit my criteria
 took a lot of manual work. I built a research agent to help with that search.
 The results were useful, so I turned it into a general tool for exploring
 capstone project ideas.
 
-## Try it on your computer
+## 🚀 Try it on your computer
 
 You need Python 3.10 or newer. ScoutSpark runs locally, using your own model and
 search API keys. The **Offline demo** works without keys and uses made-up
@@ -69,7 +69,7 @@ Keep `.env` private. Never commit it or post keys in feedback. Live model and
 search services may charge you, so review the budget controls before starting a
 run.
 
-## How it works
+## 🔎 How it works
 
 1. You describe what you want to build, along with your limits.
 2. **Scout** searches for problems and suggests project ideas.
@@ -80,7 +80,7 @@ run.
 It writes a detailed proposal only when its checks pass. You can also request an
 exploratory proposal, which is clearly marked as unverified.
 
-### ScoutSpark diagrams
+### 🗺️ ScoutSpark diagrams
 
 Click each preview to open its interactive Archify page. The HTML source links
 open each of the three diagram files in the repository.
@@ -100,7 +100,7 @@ open each of the three diagram files in the repository.
 All three diagrams are made with Archify. You can also read the
 [plain-language guide to results](docs/getting-useful-results.md).
 
-## What to expect
+## ⚠️ What to expect
 
 ScoutSpark is an early preview. It may show fewer ideas than requested, find
 sources that do not support a useful plan, or withhold a detailed proposal. In
@@ -113,7 +113,7 @@ Please share bugs, confusing results, source problems, and ideas for improvement
 through [GitHub Issues](https://github.com/FaniBhushan/SparkScout/issues/new/choose).
 Do not include API keys, personal data, or private documents in public issues.
 
-## More details
+## 📚 More details
 
 - [How to get useful results](docs/getting-useful-results.md)
 - [How scoring and warnings work](docs/candidate_scoring.md)
