@@ -17,12 +17,12 @@
 </p>
 
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=IrdfptMuA7o">
-    <img src="docs/media/scoutspark-video-thumbnail.jpg" alt="Watch the one-minute ScoutSpark walkthrough" width="800">
+  <a href="https://youtu.be/FoZ9eNeRXFE">
+    <img src="site/assets/walkthrough-poster.jpg" alt="Watch the 30-second ScoutSpark live research walkthrough on YouTube" width="800">
   </a>
 </p>
 
-<p align="center"><a href="https://www.youtube.com/watch?v=IrdfptMuA7o"><strong>▶ Watch the one-minute walkthrough on YouTube</strong></a></p>
+<p align="center"><a href="https://youtu.be/FoZ9eNeRXFE"><strong>▶ Watch the 30-second walkthrough on YouTube</strong></a> · <a href="site/assets/scoutspark-walkthrough.mp4">Download the MP4</a></p>
 
 > **Limited preview · 9 October 2026**
 >
